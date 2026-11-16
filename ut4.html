@@ -1,0 +1,1847 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UT4: Canalizaciones, Mecanismos y Cálculo de Tubos — 3013 DOMO</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Fuentes Inter y JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #020617;
+      background-image:
+        radial-gradient(at 15% 10%, rgba(245, 158, 11, 0.08) 0px, transparent 45%),
+        radial-gradient(at 85% 20%, rgba(56, 189, 248, 0.08) 0px, transparent 45%),
+        linear-gradient(to right, rgba(148, 163, 184, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 28px 28px, 28px 28px;
+      color: #f8fafc;
+    }
+    .font-mono-tech {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .tab-section {
+      display: none;
+      animation: fadeIn 0.22s ease-out;
+    }
+    .tab-section.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* Estilo personalizado para barras deslizantes */
+    input[type="range"] {
+      accent-color: #f59e0b;
+    }
+    /* Toast flotante */
+    #toast-box {
+      transition: transform 0.25s ease, opacity 0.25s ease;
+      transform: translateY(130%);
+      opacity: 0;
+    }
+    #toast-box.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-amber-500 selection:text-slate-950">
+
+  <!-- =====================================================================
+       CABECERA STICKY INSTITUCIONAL (SALESIANOS SANTÍSIMA TRINIDAD · 3013 DOMO)
+       ===================================================================== -->
+  <header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 shadow-xl">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      <!-- Identidad -->
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-amber-500/20 shrink-0">
+          🪛
+        </div>
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30">
+              Salesianos Santísima Trinidad
+            </span>
+            <span class="text-xs font-bold text-amber-400 font-mono-tech">
+              CFGB · 3013. DOMO · Curso 2026-27
+            </span>
+          </div>
+          <h1 class="text-base sm:text-xl font-black text-white tracking-tight">
+            UT4: Canalizaciones, Mecanismos y Cálculo de Tubos
+          </h1>
+        </div>
+      </div>
+
+      <!-- Marcador XP + Botón Copiar para Canva + Pestañas -->
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center gap-2 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl">
+          <span class="text-amber-400 text-sm">🏆</span>
+          <span class="text-xs text-slate-400 font-medium">Puntos Alumno:</span>
+          <span id="xp-counter" class="text-sm font-black text-amber-400 font-mono-tech">0 XP</span>
+        </div>
+
+        <button onclick="copyHtmlForCanva()" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-600/25 hover:bg-purple-600/40 text-purple-200 border border-purple-500/40 transition flex items-center gap-1.5" title="Copia el código HTML completo para pegarlo en Canva o Google Sites">
+          <span>🎨</span>
+          <span class="hidden sm:inline">Copiar HTML</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra de Navegación de los 4 Módulos -->
+    <div class="bg-slate-900/90 border-t border-slate-800/80">
+      <nav class="max-w-7xl mx-auto px-4 py-2 grid grid-cols-2 lg:grid-cols-4 gap-2" aria-label="Navegación UT4">
+        <button id="nav-btn-canva" onclick="switchMainTab('canva')" class="nav-tab-btn px-3 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition flex items-center justify-center gap-2 bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20">
+          <span>📐</span>
+          <span>1. Canva Conceptos</span>
+        </button>
+        <button id="nav-btn-geometria" onclick="switchMainTab('geometria')" class="nav-tab-btn px-3 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition flex items-center justify-center gap-2 bg-slate-800/90 text-slate-300 hover:bg-slate-700 hover:text-white">
+          <span>⬛</span>
+          <span>2. Cuadrados, Unidades y Tubos</span>
+        </button>
+        <button id="nav-btn-taller" onclick="switchMainTab('taller')" class="nav-tab-btn px-3 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition flex items-center justify-center gap-2 bg-slate-800/90 text-slate-300 hover:bg-slate-700 hover:text-white">
+          <span>👷</span>
+          <span>3. Simulador de Obra</span>
+        </button>
+        <button id="nav-btn-evaluacion" onclick="switchMainTab('evaluacion')" class="nav-tab-btn px-3 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition flex items-center justify-center gap-2 bg-slate-800/90 text-slate-300 hover:bg-slate-700 hover:text-white">
+          <span>✅</span>
+          <span>4. Test, Texto y Flechas</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-8">
+
+    <!-- =====================================================================
+         MÓDULO 1: CANVA VISUAL DE CONCEPTOS BÁSICOS (PÁGINAS 38 A 46)
+         ===================================================================== -->
+    <section id="tab-canva" class="tab-section active space-y-8">
+      <!-- Banner Resumen -->
+      <div class="bg-gradient-to-r from-amber-500/15 via-blue-500/10 to-slate-900 border border-amber-500/30 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <span class="text-xs font-extrabold uppercase tracking-widest text-amber-400">
+            Infografía Interactiva · Unidad de Trabajo 4
+          </span>
+          <h2 class="text-xl sm:text-2xl font-black text-white">
+            Canalizaciones, Cajas de Mecanismos y Cajas de Registro
+          </h2>
+          <p class="text-sm text-slate-300 max-w-3xl">
+            Una <strong class="text-white">canalización eléctrica</strong> es el conjunto de elementos encargados de <span class="text-amber-400 font-bold">proteger, aislar y guiar</span> los conductores eléctricos. Haz clic en los botones de cada tarjeta para inspeccionar las piezas reales del taller.
+          </p>
+        </div>
+        <button onclick="switchMainTab('geometria')" class="shrink-0 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs sm:text-sm transition shadow-lg shadow-amber-500/20">
+          Ir a Cálculo de Tubos y Cuadrados ➔
+        </button>
+      </div>
+
+      <!-- FILA 1: CAJAS DE MECANISMOS Y CAJAS DE DERIVACIÓN -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- TARJETA 1: CAJILLO UNIVERSAL Y REGLA DE 60 MM -->
+        <div class="bg-slate-900/95 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-5 shadow-xl">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                Páginas 38 y 39 del Tema
+              </span>
+              <span class="text-xs font-extrabold text-amber-400 font-mono-tech">
+                📏 Cota Estándar: 60 mm
+              </span>
+            </div>
+            <h3 class="text-xl font-black text-white mb-2">
+              1. Cajas de Mecanismos (Cajillo Universal)
+            </h3>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              Alojan interruptores, conmutadores, pulsadores y tomas de corriente. Son de <strong>PVC</strong> y existen en versión <strong>empotrada</strong> (cuadradas enlazables, circulares con garras o múltiples como la <em>REF 585</em>) y de <strong>superficie</strong>.
+            </p>
+          </div>
+
+          <!-- Simulador de Cajillo y Despiece -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                Esquema Técnico del Cajillo Universal
+              </span>
+              <div class="flex gap-1.5">
+                <button onclick="setCajilloView('empotrado')" id="btn-caj-emp" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition">
+                  Empotrado (60 mm)
+                </button>
+                <button onclick="setCajilloView('superficie')" id="btn-caj-sup" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:text-white transition">
+                  Superficie (T1-T4)
+                </button>
+              </div>
+            </div>
+
+            <!-- Vista Empotrado 60 mm -->
+            <div id="cajillo-view-empotrado" class="flex flex-col sm:flex-row items-center justify-around gap-4 py-2">
+              <div class="text-center shrink-0">
+                <svg width="165" height="150" viewBox="0 0 165 150" class="mx-auto">
+                  <!-- Cuerpo cuadrado PVC -->
+                  <rect x="27" y="15" width="110" height="110" rx="14" fill="#1e293b" stroke="#64748b" stroke-width="3" />
+                  <rect x="37" y="25" width="90" height="90" rx="8" fill="#0f172a" stroke="#334155" stroke-width="2" />
+                  <!-- Troquelado circular fondo -->
+                  <circle cx="82" cy="70" r="20" fill="none" stroke="#475569" stroke-width="1.5" stroke-dasharray="4 3" />
+                  <!-- Tornillos del bastidor a 60 mm -->
+                  <circle cx="44" cy="70" r="5.5" fill="#f59e0b" />
+                  <circle cx="120" cy="70" r="5.5" fill="#f59e0b" />
+                  <!-- Línea de cota 60 mm -->
+                  <line x1="44" y1="70" x2="120" y2="70" stroke="#fbbf24" stroke-width="2" stroke-dasharray="3 3" />
+                  <rect x="56" y="59" width="52" height="22" rx="5" fill="#020617" stroke="#f59e0b" stroke-width="1.5" />
+                  <text x="82" y="74" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="800">60 mm</text>
+                  <!-- Conector lateral enlazable -->
+                  <rect x="137" y="57" width="11" height="26" rx="2" fill="#475569" />
+                  <text x="82" y="142" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600">Orificios Bastidor = 60 mm</text>
+                </svg>
+              </div>
+              <div class="flex-1 space-y-2 text-xs">
+                <div class="p-2.5 rounded-lg bg-slate-900 border border-amber-500/40">
+                  <strong class="text-amber-400">1. Cajillo en pared:</strong> Entra el tubo corrugado por el troquelado con Fase (marrón), Neutro (azul) y Tierra (amarillo-verde).
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-900 border border-blue-500/40">
+                  <strong class="text-blue-400">2. Bastidor metálico/plástico:</strong> Sus tornillos laterales coinciden siempre a <strong>60 mm</strong>.
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-900 border border-emerald-500/40">
+                  <strong class="text-emerald-400">3. Tecla y Marco embellecedor:</strong> Se fijan encima aislando las partes activas.
+                </div>
+              </div>
+            </div>
+
+            <!-- Vista Superficie (Esquema T1-T4 Pág. 39) -->
+            <div id="cajillo-view-superficie" class="hidden py-2 space-y-3">
+              <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 text-xs text-slate-300">
+                <strong class="text-amber-400 block mb-1">Montaje en Superficie (Sin obras ni rozas):</strong>
+                Tanto los cajillos como los tubos van fijados por fuera de la pared. En el esquema de taller de la página 39 vemos una caja de registro alimentando por superficie:
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                <div class="bg-slate-900 p-2 rounded border border-slate-700">
+                  <span class="font-mono-tech font-bold text-amber-400 block">Tubo T1</span>
+                  <span class="text-slate-300">Línea General</span>
+                </div>
+                <div class="bg-slate-900 p-2 rounded border border-slate-700">
+                  <span class="font-mono-tech font-bold text-blue-400 block">Tubo T2</span>
+                  <span class="text-slate-300">Hacia Interruptor</span>
+                </div>
+                <div class="bg-slate-900 p-2 rounded border border-slate-700">
+                  <span class="font-mono-tech font-bold text-emerald-400 block">Tubo T3</span>
+                  <span class="text-slate-300">Hacia Enchufe 1</span>
+                </div>
+                <div class="bg-slate-900 p-2 rounded border border-slate-700">
+                  <span class="font-mono-tech font-bold text-purple-400 block">Tubo T4</span>
+                  <span class="text-slate-300">Hacia Enchufe 2</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3 Variantes de Cajillo -->
+          <div class="grid grid-cols-3 gap-2 text-xs">
+            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+              <strong class="text-white block mb-0.5">Cuadrado Enlazable</strong>
+              <span class="text-slate-400">Permite unir 2 o más cajillos juntos para varios mecanismos.</span>
+            </div>
+            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+              <strong class="text-yellow-400 block mb-0.5">Circular / REF 585</strong>
+              <span class="text-slate-400">Amarillo con garras para pladur o negro triple (REF 585).</span>
+            </div>
+            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+              <strong class="text-emerald-400 block mb-0.5">De Superficie</strong>
+              <span class="text-slate-400">Con entradas laterales/superiores para tubos rígidos o canaletas.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TARJETA 2: CAJAS DE DERIVACIÓN O REGISTRO (ANATOMÍA PÁG. 40-41) -->
+        <div class="bg-slate-900/95 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-5 shadow-xl">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                Páginas 40 y 41 del Tema
+              </span>
+              <span class="text-xs font-extrabold text-emerald-400">
+                🔌 Alojan Empalmes y Regletas
+              </span>
+            </div>
+            <h3 class="text-xl font-black text-white mb-2">
+              2. Cajas de Derivación o Registro
+            </h3>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              Alojan en su interior los empalmes de conductores (regletas). En viviendas, oficinas y locales públicos van <strong>empotradas</strong> (con <em>troquelados</em> en laterales y fondo), salvo en reformas para evitar obras. En industria suelen ir en <strong>superficie</strong>.
+            </p>
+          </div>
+
+          <!-- Selector Interactivo de las 4 Partes de la Caja de Superficie (Pág. 41) -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-4">
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Haz clic en cada parte de la Caja de Registro de Superficie (Pág. 41):
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button onclick="selectBoxAnatomy('cono')" id="anat-btn-cono" class="anat-btn p-2.5 rounded-xl text-left border transition bg-amber-500/20 border-amber-500 text-white">
+                <div class="text-xs font-extrabold">1. Cono métrico</div>
+                <div class="text-[10px] text-amber-400 font-semibold">Pasacables</div>
+              </button>
+              <button onclick="selectBoxAnatomy('precinto')" id="anat-btn-precinto" class="anat-btn p-2.5 rounded-xl text-left border transition bg-slate-900 border-slate-800 text-slate-400 hover:text-white">
+                <div class="text-xs font-extrabold">2. Precintables</div>
+                <div class="text-[10px] text-amber-400 font-semibold">Seguridad</div>
+              </button>
+              <button onclick="selectBoxAnatomy('puerta')" id="anat-btn-puerta" class="anat-btn p-2.5 rounded-xl text-left border transition bg-slate-900 border-slate-800 text-slate-400 hover:text-white">
+                <div class="text-xs font-extrabold">3. Sujeción puerta</div>
+                <div class="text-[10px] text-amber-400 font-semibold">Bisagra</div>
+              </button>
+              <button onclick="selectBoxAnatomy('tornillo')" id="anat-btn-tornillo" class="anat-btn p-2.5 rounded-xl text-left border transition bg-slate-900 border-slate-800 text-slate-400 hover:text-white">
+                <div class="text-xs font-extrabold">4. Tornillo 1/4</div>
+                <div class="text-[10px] text-amber-400 font-semibold">Cierre rápido</div>
+              </button>
+            </div>
+
+            <!-- Panel Explicativo Dinámico -->
+            <div id="anatomy-detail-box" class="bg-slate-900 border border-slate-700 rounded-xl p-3.5 text-xs space-y-2">
+              <!-- Rellenado por JS -->
+            </div>
+          </div>
+
+          <!-- Diferencia Empotrada vs Superficie -->
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+              <strong class="text-amber-400 block mb-1">🏠 Viviendas y Oficinas:</strong>
+              Instalación <strong>empotrada</strong> con troquelados (excepto cuando se hacen reformas para evitar obras de albañilería).
+            </div>
+            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+              <strong class="text-blue-400 block mb-1">🏭 Naves Industriales:</strong>
+              Instalación en <strong>superficie</strong> (cajas de PVC estancas o metálicas) para facilitar mantenimiento y ampliaciones.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILA 2: TUBOS PROTECTORES, MATERIALES, ACCESORIOS Y PRESCRIPCIONES (PÁG. 42-46) -->
+      <div class="bg-slate-900/95 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div>
+            <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              Páginas 42 a 46 del Tema
+            </span>
+            <h3 class="text-xl font-black text-white mt-2">
+              3. Tubos Protectores, Materiales, Accesorios y Prescripciones REBT
+            </h3>
+          </div>
+          <!-- Botones de selección de tipo de tubo -->
+          <div class="flex flex-wrap gap-2">
+            <button onclick="selectTubeMaterial('corrugado')" id="mat-btn-corrugado" class="mat-btn px-3 py-1.5 rounded-xl text-xs font-extrabold border transition bg-amber-500 text-slate-950 border-amber-400">
+              Corrugado (Empotrado)
+            </button>
+            <button onclick="selectTubeMaterial('tuboh')" id="mat-btn-tuboh" class="mat-btn px-3 py-1.5 rounded-xl text-xs font-extrabold border transition bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-600">
+              Tubo H Rígido PVC (Superficie)
+            </button>
+            <button onclick="selectTubeMaterial('metalico')" id="mat-btn-metalico" class="mat-btn px-3 py-1.5 rounded-xl text-xs font-extrabold border transition bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-600">
+              Metálico Rígido (Acero)
+            </button>
+            <button onclick="selectTubeMaterial('halogenos')" id="mat-btn-halogenos" class="mat-btn px-3 py-1.5 rounded-xl text-xs font-extrabold border transition bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-600">
+              Libre de Halógenos (Público)
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+          <!-- Detalle del Material Seleccionado + Accesorios -->
+          <div class="lg:col-span-2 bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col justify-between space-y-4">
+            <div id="tube-material-detail" class="space-y-3">
+              <!-- Rellenado por JS -->
+            </div>
+
+            <!-- Accesorios de Unión y Fijación (Pág. 44, 45 y 46) -->
+            <div class="pt-4 border-t border-slate-800">
+              <div class="text-xs font-bold text-slate-400 uppercase mb-2.5">
+                Accesorios de Unión y Fijación (Mismo diámetro que el tubo):
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                  <strong class="text-amber-400 block">Manguito</strong>
+                  <span class="text-slate-400">Une dos tubos rectos del mismo diámetro.</span>
+                </div>
+                <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                  <strong class="text-amber-400 block">Curva Rígida</strong>
+                  <span class="text-slate-400">Cambio de dirección en esquinas sin reducir sección.</span>
+                </div>
+                <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                  <strong class="text-amber-400 block">Curva Flexible</strong>
+                  <span class="text-slate-400">Anillada para adaptarse a giros difíciles.</span>
+                </div>
+                <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                  <strong class="text-amber-400 block">Grapas / Abrazaderas</strong>
+                  <span class="text-slate-400">Fijan el tubo a la pared cada <strong>0,50 m</strong> máx.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Prescripciones Generales REBT (Pág. 43) -->
+          <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5 flex flex-col justify-between space-y-3">
+            <div>
+              <div class="text-xs font-black uppercase tracking-wider text-amber-400 mb-2">
+                ⚡ Prescripciones Generales (Pág. 43)
+              </div>
+              <ul class="space-y-2.5 text-xs text-slate-200">
+                <li class="flex items-start gap-2">
+                  <span class="text-amber-400 font-bold">✔</span>
+                  <span><strong>Trazado recto:</strong> Líneas estrictamente verticales y horizontales. Las curvas serán continuas y no originarán reducciones de sección.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-amber-400 font-bold">✔</span>
+                  <span><strong>Abrazaderas o bridas:</strong> Separadas como máximo <strong>0,50 m (medio metro)</strong>.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-amber-400 font-bold">✔</span>
+                  <span><strong>Registros en tramos rectos:</strong> No estarán separados más de <strong>15 m</strong> para facilitar meter y sacar cables.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-amber-400 font-bold">✔</span>
+                  <span><strong>Orden de trabajo:</strong> Los conductores (unipolares o mangueras) se alojan una vez colocados los tubos.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-amber-400 font-bold">✔</span>
+                  <span><strong>Diámetros comerciales:</strong> <code class="text-amber-300 font-bold">16, 20, 25, 32, 40 y 50 mm</code>.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         MÓDULO 2: CÁLCULO DE DIMENSIONES, CUADRADOS EQUIVALENTES Y UNIDADES
+         ===================================================================== -->
+    <section id="tab-geometria" class="tab-section space-y-8">
+
+      <!-- PARTE A: RELACIÓN ÁREAS CON DIÁMETROS ("COMO SI FUERAN CUADRADOS") + TEORÍA DE LAS UNIDADES -->
+      <div class="bg-slate-900/95 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div>
+            <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              Geometría Aplicada al Taller · Relación Área ($\text{mm}^2$) vs Diámetro ($\text{mm}$)
+            </span>
+            <h2 class="text-xl sm:text-2xl font-black text-white mt-1">
+              El Secreto de los Tubos: Imaginándolos "Como si fueran Cuadrados" ($D \times D$)
+            </h2>
+            <p class="text-sm text-slate-300 mt-1">
+              Comprende visualmente por qué los tubos se piden por <strong>diámetro en $\text{mm}$</strong>, los cables por <strong>sección en $\text{mm}^2$</strong> y cuántas <strong>unidades de capacidad</strong> soporta cada tubo.
+            </p>
+          </div>
+          <button onclick="toggleSquareOverlay()" id="btn-toggle-squares" class="shrink-0 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold px-4 py-2 rounded-xl text-xs border border-slate-700 transition">
+            ⬛ Ocultar/Mostrar Cuadrados Equivalentes
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          <!-- Explicación de la Teoría de los Cuadrados y Unidades -->
+          <div class="lg:col-span-5 bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col justify-between space-y-4">
+            <div class="space-y-3">
+              <h3 class="text-base font-black text-amber-400">
+                1. ¿Qué pasa cuando duplicamos el diámetro?
+              </h3>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Si comparas un tubo de <strong>Ø 16 mm</strong> con uno de <strong>Ø 32 mm</strong>, parece que el de 32 mm es solo "el doble de grande". Pero los cables ocupan <strong>superficie ($\text{mm}^2$)</strong>, no solo anchura.
+              </p>
+              <div class="bg-slate-900 p-3.5 rounded-xl border border-amber-500/30 text-xs space-y-2">
+                <div class="font-bold text-white">📐 Regla de los Cuadrados ($D \times D$):</div>
+                <p class="text-slate-300">
+                  • Un cuadrado de lado <strong>16 mm</strong> tiene $16 \times 16 =$ <strong class="text-blue-400">256 unidades cuadradas ($\text{mm}^2$)</strong>.
+                </p>
+                <p class="text-slate-300">
+                  • Un cuadrado de lado <strong>32 mm</strong> tiene $32 \times 32 =$ <strong class="text-amber-400">1.024 unidades cuadradas ($\text{mm}^2$)</strong>.
+                </p>
+                <p class="text-emerald-400 font-bold">
+                  ¡Al duplicar el diámetro (x2), las unidades de superficie se multiplican por 4 (x4)! Caben 4 tubos de 16 mm dentro de uno de 32 mm.
+                </p>
+              </div>
+
+              <!-- Selectores de Comparación de Diámetros Comerciales -->
+              <div class="space-y-3 pt-2">
+                <div>
+                  <label class="text-xs font-bold text-slate-400 block mb-1.5">
+                    Selecciona Diámetro del Tubo A (Azul):
+                  </label>
+                  <div class="grid grid-cols-6 gap-1.5" id="comp-btns-a"></div>
+                </div>
+                <div>
+                  <label class="text-xs font-bold text-slate-400 block mb-1.5">
+                    Selecciona Diámetro del Tubo B (Ámbar):
+                  </label>
+                  <div class="grid grid-cols-6 gap-1.5" id="comp-btns-b"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Teoría de las Unidades que soporta cada Diámetro -->
+            <div class="bg-blue-950/30 border border-blue-500/30 rounded-xl p-3.5 text-xs space-y-1.5">
+              <div class="font-bold text-blue-400">🧮 Teoría de las Unidades que soporta cada tubo:</div>
+              <p class="text-slate-300">
+                Si tomamos el tubo de <strong>16 mm</strong> como <strong>1 Unidad Base de Capacidad</strong> ($16^2 = 256\text{ u}^2$):
+              </p>
+              <div class="grid grid-cols-3 gap-1.5 pt-1 text-[11px] font-mono-tech text-center">
+                <div class="bg-slate-900 p-1.5 rounded border border-slate-800">Ø16 = <strong>1,00 u</strong></div>
+                <div class="bg-slate-900 p-1.5 rounded border border-slate-800">Ø20 = <strong>1,56 u</strong></div>
+                <div class="bg-slate-900 p-1.5 rounded border border-slate-800">Ø25 = <strong>2,44 u</strong></div>
+                <div class="bg-slate-900 p-1.5 rounded border border-slate-800">Ø32 = <strong>4,00 u</strong></div>
+                <div class="bg-slate-900 p-1.5 rounded border border-slate-800">Ø40 = <strong>6,25 u</strong></div>
+                <div class="bg-slate-900 p-1.5 rounded border border-slate-800">Ø50 = <strong>9,76 u</strong></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lienzo Visual Comparativo de los dos Tubos como Cuadrados -->
+          <div class="lg:col-span-7 bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center my-auto py-2">
+              <!-- Figura A -->
+              <div class="text-center space-y-2">
+                <div id="comp-title-a" class="text-sm font-black text-blue-400">Tubo A: Ø 16 mm</div>
+                <div class="h-48 flex items-center justify-center bg-slate-900/60 rounded-xl border border-slate-800/80">
+                  <svg id="svg-comp-a" width="185" height="185" viewBox="0 0 185 185"></svg>
+                </div>
+                <div id="comp-stats-a" class="bg-slate-900 p-3 rounded-xl border border-slate-800 text-xs space-y-1"></div>
+              </div>
+
+              <!-- Figura B -->
+              <div class="text-center space-y-2">
+                <div id="comp-title-b" class="text-sm font-black text-amber-400">Tubo B: Ø 32 mm</div>
+                <div class="h-48 flex items-center justify-center bg-slate-900/60 rounded-xl border border-slate-800/80">
+                  <svg id="svg-comp-b" width="185" height="185" viewBox="0 0 185 185"></svg>
+                </div>
+                <div id="comp-stats-b" class="bg-slate-900 p-3 rounded-xl border border-slate-800 text-xs space-y-1"></div>
+              </div>
+            </div>
+
+            <!-- Barra Inferior de Relación Matemática -->
+            <div id="comp-ratio-banner" class="bg-slate-900 border border-slate-700 rounded-xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+              <!-- Rellenado por JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PARTE B: SIMULADOR DE CAPACIDAD DE CABLES Y TABLA OFICIAL (PÁGINAS 43 Y 45) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Simulador Visual en Vivo -->
+        <div class="lg:col-span-7 bg-slate-900/95 border border-slate-800 rounded-2xl p-6 space-y-5 shadow-xl">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <span class="text-xs font-extrabold text-emerald-400 uppercase tracking-wider">
+                Simulador Interactivo · Corte Transversal del Tubo
+              </span>
+              <h3 class="text-xl font-black text-white">
+                Prueba cuántos cables admite cada tubo (Pág. 43 y 45)
+              </h3>
+            </div>
+            <!-- Selector Unipolar vs Manguera (Pág. 43) -->
+            <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+              <button onclick="setCableGrouping('unipolar')" id="grp-btn-unipolar" class="px-3 py-1.5 rounded-lg font-extrabold bg-amber-500 text-slate-950 transition">
+                Cables Unipolares
+              </button>
+              <button onclick="setCableGrouping('manguera')" id="grp-btn-manguera" class="px-3 py-1.5 rounded-lg font-extrabold text-slate-400 hover:text-white transition">
+                Manguera
+              </button>
+            </div>
+          </div>
+
+          <!-- Controles del Simulador -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-950 p-4 rounded-xl border border-slate-800">
+            <!-- Selector Diámetro -->
+            <div>
+              <label class="text-xs font-bold text-slate-400 block mb-2">1. Diámetro Tubo:</label>
+              <div class="grid grid-cols-2 gap-1.5" id="sim-dia-btns"></div>
+            </div>
+            <!-- Selector Sección -->
+            <div>
+              <label class="text-xs font-bold text-slate-400 block mb-2">2. Sección Cable:</label>
+              <div class="grid grid-cols-2 gap-1.5" id="sim-sec-btns"></div>
+            </div>
+            <!-- Slider Número de Cables -->
+            <div>
+              <label class="text-xs font-bold text-slate-400 block mb-2">
+                3. Cantidad: <strong id="sim-count-label" class="text-amber-400 font-mono-tech">4 cables</strong>
+              </label>
+              <input id="sim-count-slider" type="range" min="1" max="10" value="4" oninput="updateTubeSimulator()" class="w-full cursor-pointer mt-1" />
+              <div class="flex justify-between text-[11px] text-slate-500 font-mono-tech mt-1">
+                <span>1</span>
+                <span id="sim-max-hint" class="text-emerald-400">Máx: 5</span>
+                <span>10</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dibujo SVG idéntico al esquema de la página 43 + Diagnóstico -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row items-center gap-6">
+            <div class="shrink-0">
+              <svg id="svg-tube-cross" width="210" height="200" viewBox="0 0 210 200"></svg>
+            </div>
+            <div class="flex-1 space-y-3">
+              <div id="sim-status-box" class="p-3.5 rounded-xl border"></div>
+              <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 text-xs space-y-1.5">
+                <div class="font-bold text-amber-400">💡 ¿Por qué sobra tanto espacio blanco (aire) en el dibujo?</div>
+                <p class="text-slate-300">
+                  1) La sección nominal (<span id="sim-sec-explain" class="font-bold text-white">2,5 mm²</span>) solo mide el <strong>hilo de cobre interior</strong> (punto verde/naranja), pero la funda de plástico ocupa mucho más.
+                </p>
+                <p class="text-slate-300">
+                  2) El tubo necesita <strong>aire libre obligatorio</strong> para que los cables no se atasquen en las curvas y disipen el calor.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla Oficial Interactiva (Página 45) -->
+        <div class="lg:col-span-5 bg-slate-900/95 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-4 shadow-xl">
+          <div>
+            <span class="text-xs font-extrabold text-amber-400 uppercase tracking-wider">
+              Tabla Oficial Página 45
+            </span>
+            <h3 class="text-lg font-black text-white mt-1">
+              Tabla de Capacidad de Cables por Diámetro
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">
+              Pulsa sobre cualquier casilla de la tabla para cargar esa combinación en el simulador:
+            </p>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-950 text-slate-300 border-b border-slate-800">
+                  <th class="p-2.5 text-left font-extrabold">Ø Tubo</th>
+                  <th class="p-2.5 text-center font-extrabold">1,5 mm²</th>
+                  <th class="p-2.5 text-center font-extrabold">2,5 mm²</th>
+                  <th class="p-2.5 text-center font-extrabold">4 mm²</th>
+                  <th class="p-2.5 text-center font-extrabold">6 mm²</th>
+                </tr>
+              </thead>
+              <tbody id="official-table-body" class="divide-y divide-slate-800">
+                <!-- Generado dinámicamente por JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="bg-blue-950/30 border border-blue-500/30 rounded-xl p-3.5 text-xs text-blue-200 space-y-1.5">
+            <div class="font-extrabold text-blue-400">🧠 Regla Mnemotécnica para el Examen:</div>
+            <p>• <strong>Ø 16 mm:</strong> Escalera descendente <code class="text-white font-bold">5 - 4 - 2 - 2</code>.</p>
+            <p>• <strong>Ø 20 mm:</strong> Todo <code class="text-white font-bold">5 cables</code> (excepto el de 6 mm² que admite <code class="text-white font-bold">4</code>).</p>
+            <p>• <strong>Ø 25 mm:</strong> Mitad <code class="text-white font-bold">6 cables</code> (1,5 y 2,5) y mitad <code class="text-white font-bold">5 cables</code> (4 y 6).</p>
+            <p>• <strong>Ø 32 mm:</strong> Mitad <code class="text-white font-bold">8 cables</code> (1,5 y 2,5) y mitad <code class="text-white font-bold">6 cables</code> (4 y 6).</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         MÓDULO 3: SIMULADOR DE DECISIONES EN OBRA REAL (TALLER)
+         ===================================================================== -->
+    <section id="tab-taller" class="tab-section space-y-6">
+      <div class="bg-slate-900/95 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div>
+            <span class="text-xs font-extrabold uppercase tracking-wider text-amber-400">
+              Simulación Profesional · Instalaciones Eléctricas y Domóticas
+            </span>
+            <h2 class="text-2xl font-black text-white mt-1">
+              Simulador de Proyectos y Decisiones de Obra
+            </h2>
+            <p class="text-sm text-slate-300">
+              Lee el encargo de cada cliente y configura el material del tubo, el diámetro según la tabla oficial y las prescripciones de montaje.
+            </p>
+          </div>
+          <div id="workshop-case-tabs" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- Contenedor del Caso Activo -->
+        <div id="workshop-case-content" class="space-y-6"></div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         MÓDULO 4: PORTAL DE EVALUACIÓN (TEST, PREGUNTAS DE TEXTO/SELECCIÓN Y FLECHAS)
+         ===================================================================== -->
+    <section id="tab-evaluacion" class="tab-section space-y-6">
+      <!-- Sub-navegación de Actividades -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap gap-2">
+          <button onclick="switchEvalMode('test')" id="eval-btn-test" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition bg-amber-500 text-slate-950">
+            📝 1. Preguntas Tipo Test (12)
+          </button>
+          <button onclick="switchEvalMode('texto')" id="eval-btn-texto" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition bg-slate-950 text-slate-300 hover:bg-slate-800">
+            ⌨️ 2. Preguntas de Texto y Selección
+          </button>
+          <button onclick="switchEvalMode('flechas')" id="eval-btn-flechas" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition bg-slate-950 text-slate-300 hover:bg-slate-800">
+            🔀 3. Une con Flechas (3 Rondas)
+          </button>
+        </div>
+
+        <button onclick="resetAllEvaluations()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-950 text-slate-400 hover:text-white border border-slate-800 transition">
+          🔄 Reiniciar Pruebas
+        </button>
+      </div>
+
+      <!-- SUB-VISTA 1: EXAMEN TIPO TEST (12 PREGUNTAS) -->
+      <div id="eval-view-test" class="space-y-5">
+        <div id="quiz-questions-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div id="quiz-progress-text" class="text-sm text-slate-300 font-medium">
+            Selecciona una respuesta en cada tarjeta y pulsa corregir.
+          </div>
+          <button onclick="gradeQuizTest()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-6 py-3 rounded-xl text-sm transition shadow-lg shadow-amber-500/20">
+            ✅ Corregir Examen Tipo Test
+          </button>
+        </div>
+      </div>
+
+      <!-- SUB-VISTA 2: PREGUNTAS DE TEXTO CORTO Y SELECCIÓN RÁPIDA -->
+      <div id="eval-view-texto" class="hidden space-y-6">
+        <!-- Bloque A: Escribe el dato exacto (Tipo Texto) -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+            <div>
+              <span class="text-xs font-extrabold text-amber-400 uppercase">Prueba de Escritura Técnica</span>
+              <h3 class="text-lg font-black text-white">Completa el Dato o Concepto Exacto (Preguntas de Texto)</h3>
+            </div>
+            <button onclick="checkTextQuestions()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-4 py-2 rounded-xl text-xs transition self-start">
+              Comprobar Respuestas Escritas
+            </button>
+          </div>
+          <div id="text-questions-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+
+        <!-- Bloque B: Desplegables de Selección Rápida -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+          <div>
+            <span class="text-xs font-extrabold text-blue-400 uppercase">Prueba de Selección Directa</span>
+            <h3 class="text-lg font-black text-white">Selecciona la Opción Correcta en cada Caso</h3>
+          </div>
+          <div id="select-questions-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+      </div>
+
+      <!-- SUB-VISTA 3: UNE CON FLECHAS INTERACTIVO -->
+      <div id="eval-view-flechas" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div>
+            <span class="text-xs font-extrabold text-amber-400 uppercase">Repaso Relacional · Une con Flechas</span>
+            <h3 id="match-round-title" class="text-xl font-black text-white mt-0.5"></h3>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Haz clic primero en un elemento de la <strong>columna izquierda</strong> y después en su pareja de la <strong>columna derecha</strong> para trazar la flecha.
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="setMatchingRound(0)" id="mround-btn-0" class="px-3 py-1.5 rounded-xl text-xs font-extrabold border bg-amber-500 text-slate-950 border-amber-400">
+              Ronda 1: Medidas
+            </button>
+            <button onclick="setMatchingRound(1)" id="mround-btn-1" class="px-3 py-1.5 rounded-xl text-xs font-extrabold border bg-slate-950 text-slate-300 border-slate-800">
+              Ronda 2: Tubos
+            </button>
+            <button onclick="setMatchingRound(2)" id="mround-btn-2" class="px-3 py-1.5 rounded-xl text-xs font-extrabold border bg-slate-950 text-slate-300 border-slate-800">
+              Ronda 3: Cajas y Tabla
+            </button>
+            <button onclick="clearCurrentMatchingRound()" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white">
+              Limpiar Flechas
+            </button>
+          </div>
+        </div>
+
+        <!-- Tablero de 3 columnas (Izquierda - SVG Flechas - Derecha) -->
+        <div class="grid grid-cols-1 lg:grid-cols-11 gap-4 items-center">
+          <div id="match-left-col" class="lg:col-span-4 space-y-3"></div>
+          <div class="hidden lg:flex lg:col-span-3 h-[320px] items-center justify-center">
+            <svg id="match-svg-canvas" width="100%" height="310" viewBox="0 0 220 310" class="overflow-visible"></svg>
+          </div>
+          <div id="match-right-col" class="lg:col-span-4 space-y-3"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- NOTIFICACIÓN TOAST SIN ALERT() -->
+  <div id="toast-box" class="fixed bottom-5 right-5 z-50 bg-slate-900 border border-amber-500 text-white px-4 py-3 rounded-xl shadow-2xl text-xs font-bold max-w-sm"></div>
+
+  <!-- =====================================================================
+       LÓGICA JAVASCRIPT AUTOCONTENIDA
+       ===================================================================== -->
+  <script>
+    // ==========================================
+    // 1. DATOS OFICIALES DE LA UNIDAD 4 (DOMO)
+    // ==========================================
+    const TUBE_CAPACITY_TABLE = {
+      16: { '1.5': 5, '2.5': 4, '4': 2, '6': 2 },
+      20: { '1.5': 5, '2.5': 5, '4': 5, '6': 4 },
+      25: { '1.5': 6, '2.5': 6, '4': 5, '6': 5 },
+      32: { '1.5': 8, '2.5': 8, '4': 6, '6': 6 }
+    };
+
+    const COMMERCIAL_DIAMETERS = [16, 20, 25, 32, 40, 50];
+
+    const CABLE_SPECS = {
+      '1.5': { label: '1,5 mm²', use: 'Alumbrado' },
+      '2.5': { label: '2,5 mm²', use: 'Tomas de corriente' },
+      '4':   { label: '4 mm²',   use: 'Lavadora / Termo' },
+      '6':   { label: '6 mm²',   use: 'Cocina / Horno' }
+    };
+
+    const BOX_ANATOMY_INFO = {
+      cono: {
+        title: '1. Cono Métrico (Pasacables escalonado)',
+        desc: 'Las cajas de superficie disponen de conos pasacables que se cortan fácilmente a la medida de la manguera o tubo a insertar. También se puede retirar el cono completo para alojar:',
+        extra: `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <div class="bg-slate-950 p-2.5 rounded-lg border border-blue-500/30">
+              <strong class="text-blue-400">Racor:</strong> Accesorio para la inserción y fijación rígida de <strong>tubos</strong> a la caja.
+            </div>
+            <div class="bg-slate-950 p-2.5 rounded-lg border border-emerald-500/30">
+              <strong class="text-emerald-400">Prensaestopas:</strong> Accesorio que abraza y sella la entrada de <strong>mangueras</strong>.
+            </div>
+          </div>
+        `
+      },
+      precinto: {
+        title: '2. Orificios Precintables',
+        desc: 'Permiten colocar un precinto de seguridad en la tapa de la caja de registro para impedir que personas ajenas manipulen los empalmes sin autorización.',
+        extra: ''
+      },
+      puerta: {
+        title: '3. Sujeción de Puerta (Tapa)',
+        desc: 'Tirante articulado que mantiene la tapa sujeta a la caja mientras el electricista realiza las conexiones en las regletas, evitando que se caiga.',
+        extra: ''
+      },
+      tornillo: {
+        title: '4. Tornillo de 1/4 de Vuelta',
+        desc: 'Sistema de cierre rápido: basta con girar el tornillo 90 grados (un cuarto de vuelta) con el destornillador para bloquear o abrir la tapa estanca.',
+        extra: ''
+      }
+    };
+
+    const TUBE_MATERIALS_INFO = {
+      corrugado: {
+        badge: 'Instalaciones Empotradas (Paredes y Techos)',
+        title: 'Tubo de Plástico (PVC) Flexible (Corrugado)',
+        color: 'text-amber-400',
+        desc: 'Es el más común en interiores para instalaciones empotradas. Es muy flexible y manejable, fabricado en PVC. Tiene unas <strong>estrías anilladas</strong> que le permiten una mayor fijación a los materiales de construcción (yeso, cemento). Los hay de varios colores para su identificación y de distintos diámetros.'
+      },
+      tuboh: {
+        badge: 'Instalaciones de Superficie',
+        title: 'Tubo de Plástico (PVC) Rígido ("Tubo H")',
+        color: 'text-blue-400',
+        desc: 'Conocidos como <strong>tubo H</strong>. Son recomendables en superficie por su resistencia al impacto y al aplastamiento. Actúan de eficaz aislante eléctrico, no se oxidan, son económicos y soportan temperaturas de <strong>-5 °C a 60 °C</strong>. Se curvan en caliente con <strong>decapador de aire caliente</strong> o mediante curvas y manguitos.'
+      },
+      metalico: {
+        badge: 'Ambientes Industriales y Maquinaria',
+        title: 'Tubo Metálico Rígido (Acero o Aluminio)',
+        color: 'text-emerald-400',
+        desc: 'Fabricado en acero o aluminio, ofrece la máxima resistencia al impacto y a la compresión. Indicado en ambientes industriales con <strong>riesgo de incendio</strong> o espacios con <strong>maquinaria en movimiento</strong> (fábricas, talleres). <strong>¡Muy importante!</strong> Hay que prever las posibles condensaciones de agua en su interior y <strong>ponerlos a tierra</strong>.'
+      },
+      halogenos: {
+        badge: 'Locales de Pública Concurrencia (Hospitales, Escuelas)',
+        title: 'Tubos Libres de Halógenos (Seguridad contra Incendios)',
+        color: 'text-purple-400',
+        desc: 'Muy resistentes al fuego y con excelente capacidad para no propagarlo. Tienen 3 propiedades clave en caso de incendio: <strong>1)</strong> Disminuyen la posibilidad de que el humo provoque daños en equipos y circuitos electrónicos, <strong>2)</strong> No emiten gases tóxicos en caso de combustión, y <strong>3)</strong> Emiten un humo claro que permite la visibilidad.'
+      }
+    };
+
+    const WORKSHOP_CASES = [
+      {
+        id: 1,
+        client: 'Caso 1: Hospital Materno-Infantil (Pública Concurrencia)',
+        scenario: 'Debemos instalar una canalización vista en superficie por el pasillo de urgencias. Por el interior del tubo pasarán 5 cables de 2,5 mm².',
+        questions: [
+          {
+            key: 'mat',
+            q: '1. ¿Qué material de tubo debemos elegir por tratarse de un hospital?',
+            opts: ['Tubo rígido Libre de Halógenos', 'Tubo corrugado empotrado normal', 'Tubo de PVC básico sin protección'],
+            correct: 'Tubo rígido Libre de Halógenos'
+          },
+          {
+            key: 'dia',
+            q: '2. Según la tabla de la pág. 45, ¿qué diámetro mínimo admite 5 cables de 2,5 mm²?',
+            opts: ['Ø 16 mm (admite 4 cables)', 'Ø 20 mm (admite 5 cables)', 'Ø 50 mm obligatorio'],
+            correct: 'Ø 20 mm (admite 5 cables)'
+          },
+          {
+            key: 'rule',
+            q: '3. ¿A qué distancia máxima colocaremos las abrazaderas en la pared?',
+            opts: ['Cada 0,50 m (medio metro)', 'Cada 2 metros', 'Cada 15 metros'],
+            correct: 'Cada 0,50 m (medio metro)'
+          }
+        ]
+      },
+      {
+        id: 2,
+        client: 'Caso 2: Taller Industrial con Tornos y Maquinaria en Movimiento',
+        scenario: 'En una fábrica con riesgo de golpes mecánicos e incendio hay que llevar 6 cables de 6 mm² a lo largo de un pasillo recto de 22 metros.',
+        questions: [
+          {
+            key: 'mat',
+            q: '1. ¿Qué tubo ofrece la mayor resistencia al impacto y qué precaución exige?',
+            opts: [
+              'Tubo metálico rígido de acero (evitando condensación y puesto a tierra)',
+              'Tubo corrugado de plástico doblado a mano',
+              'Tubo de PVC calentado a más de 120 °C'
+            ],
+            correct: 'Tubo metálico rígido de acero (evitando condensación y puesto a tierra)'
+          },
+          {
+            key: 'dia',
+            q: '2. ¿Qué diámetro de tubo necesitamos para alojar 6 cables de 6 mm²?',
+            opts: ['Ø 20 mm (admite 4)', 'Ø 25 mm (admite 5)', 'Ø 32 mm (admite 6)'],
+            correct: 'Ø 32 mm (admite 6)'
+          },
+          {
+            key: 'rule',
+            q: '3. El tramo recto mide 22 metros. ¿Hay que poner una caja de registro intermedia?',
+            opts: [
+              'Sí, porque en tramos rectos los registros no pueden separarse más de 15 m',
+              'No, solo se ponen registros cada 50 metros',
+              'No, en tubos metálicos nunca se ponen cajas de registro'
+            ],
+            correct: 'Sí, porque en tramos rectos los registros no pueden separarse más de 15 m'
+          }
+        ]
+      },
+      {
+        id: 3,
+        client: 'Caso 3: Vivienda Doméstica (Obra Nueva)',
+        scenario: 'Vamos a empotrar en el dormitorio un conjunto de 3 mecanismos juntos y llevar un tubo con 5 conductores de 1,5 mm² para el alumbrado.',
+        questions: [
+          {
+            key: 'mat',
+            q: '1. ¿Qué elementos emplearemos dentro del tabique de ladrillo?',
+            opts: [
+              'Cajillos universales enlazables (o caja triple REF 585) + Tubo corrugado flexible',
+              'Caja de superficie con prensaestopas + Tubo de acero visto',
+              'Sujetar los mecanismos con silicona sin cajillo'
+            ],
+            correct: 'Cajillos universales enlazables (o caja triple REF 585) + Tubo corrugado flexible'
+          },
+          {
+            key: 'dia',
+            q: '2. Para pasar 5 cables de 1,5 mm², ¿es suficiente el tubo de Ø 16 mm?',
+            opts: [
+              'Sí, el tubo de 16 mm admite hasta 5 cables de 1,5 mm²',
+              'No, solo admite 2 cables de 1,5 mm²',
+              'No, hay que usar siempre Ø 40 mm'
+            ],
+            correct: 'Sí, el tubo de 16 mm admite hasta 5 cables de 1,5 mm²'
+          },
+          {
+            key: 'rule',
+            q: '3. ¿Cuál es la separación estandarizada entre los tornillos que sujetan el bastidor al cajillo?',
+            opts: ['60 mm', '50 cm', '15 m'],
+            correct: '60 mm'
+          }
+        ]
+      }
+    ];
+
+    const QUIZ_QUESTIONS = [
+      {
+        id: 1,
+        q: '¿Cuál es la distancia estandarizada entre los orificios de fijación del bastidor en un cajillo universal?',
+        opts: ['40 mm', '60 mm', '100 mm', '50 cm'],
+        correct: 1,
+        exp: 'La distancia entre los orificios para sujetar los bastidores donde se colocan los mecanismos está estandarizada a 60 mm (Pág. 38).'
+      },
+      {
+        id: 2,
+        q: '¿Cómo se llama comúnmente al tubo rígido de PVC para superficie que se puede curvar en caliente con decapador?',
+        opts: ['Tubo Corrugado', 'Tubo H', 'Tubo Prensaestopas', 'Tubo REF 585'],
+        correct: 1,
+        exp: 'Los tubos de PVC rígidos para canalizaciones de superficie son conocidos como "tubo H" (Pág. 42).'
+      },
+      {
+        id: 3,
+        q: '¿Cuál es la distancia máxima entre bridas, grapas o abrazaderas al fijar un tubo a la pared?',
+        opts: ['0,50 m (medio metro)', '1,50 m', '5 m', '15 m'],
+        correct: 0,
+        exp: 'Los tubos se fijarán a la pared mediante bridas o abrazaderas separadas como máximo 0,50 m (Pág. 43 y 45).'
+      },
+      {
+        id: 4,
+        q: 'En tramos rectos, ¿a qué distancia máxima deben colocarse las cajas de registro?',
+        opts: ['Cada 0,50 m', 'Cada 5 m', 'No estarán separados más de 15 m', 'Cada 60 m'],
+        correct: 2,
+        exp: 'En tramos rectos los registros convenientes no estarán separados más de 15 m para facilitar meter y retirar conductores (Pág. 43).'
+      },
+      {
+        id: 5,
+        q: 'Según la tabla de capacidad (Pág. 45), ¿cuántos cables de 2,5 mm² admite como máximo un tubo de 16 mm?',
+        opts: ['2 cables', '4 cables', '5 cables', '6 cables'],
+        correct: 1,
+        exp: 'En el tubo de 16 mm caben 5 cables de 1,5 mm², 4 cables de 2,5 mm², 2 de 4 mm² y 2 de 6 mm².'
+      },
+      {
+        id: 6,
+        q: '¿Qué diámetro mínimo necesitamos para pasar 5 cables de 4 mm² según la tabla oficial?',
+        opts: ['16 mm', '20 mm', '32 mm', 'No caben en ninguno'],
+        correct: 1,
+        exp: 'El tubo de 16 mm solo admite 2 cables de 4 mm², pero el de 20 mm ya admite hasta 5 cables de 4 mm² (Pág. 45).'
+      },
+      {
+        id: 7,
+        q: 'Si duplicamos el diámetro de un tubo de 16 mm a 32 mm ("regla del cuadrado"), ¿qué ocurre con su área interior?',
+        opts: [
+          'Es exactamente el doble (x2)',
+          'Se multiplica por cuatro (x4)',
+          'Es la misma área',
+          'Disminuye a la mitad'
+        ],
+        correct: 1,
+        exp: 'Como en un cuadrado (Área = D × D), al multiplicar el diámetro por 2, el área o unidades de capacidad se multiplican por 4 (32² / 16² = 1024 / 256 = 4).'
+      },
+      {
+        id: 8,
+        q: '¿Dónde están especialmente recomendados los tubos Libres de Halógenos?',
+        opts: [
+          'Solo en jardines exteriores',
+          'En locales públicos como hospitales, escuelas o grandes almacenes',
+          'Únicamente dentro de hornos industriales',
+          'En instalaciones provisionales sin cables'
+        ],
+        correct: 1,
+        exp: 'En hospitales, escuelas o grandes almacenes porque no emiten gases tóxicos, permiten visibilidad y no dañan equipos electrónicos (Pág. 44 y 45).'
+      },
+      {
+        id: 9,
+        q: 'En una caja de registro de superficie, si retiramos el cono pasacables para sujetar una MANGUERA, ¿qué pieza colocamos?',
+        opts: ['Un prensaestopas', 'Un manguito', 'Una grapa de una pata', 'Un troquelado'],
+        correct: 0,
+        exp: 'Al retirar el pasacables podemos alojar un racor (para tubos) o un prensaestopas (para la inserción de mangueras) (Pág. 40).'
+      },
+      {
+        id: 10,
+        q: '¿Qué dos requisitos obligatorios tienen los tubos metálicos rígidos en una instalación?',
+        opts: [
+          'Pintarlos de rojo y doblarlos con aire caliente',
+          'Prever posibles condensaciones de agua en su interior y ponerlos a tierra',
+          'Empotrarlos siempre en yeso sin cajas de registro',
+          'Usarlos solo para cables de 1,5 mm²'
+        ],
+        correct: 1,
+        exp: 'Con tubos metálicos habrá que prever las posibles condensaciones de agua en su interior y se pondrán a tierra (Pág. 43).'
+      },
+      {
+        id: 11,
+        q: '¿Qué rango de temperaturas soporta un tubo rígido de PVC?',
+        opts: ['De -5 °C a 60 °C', 'De -50 °C a 300 °C', 'Solo temperaturas bajo cero', 'De 100 °C a 250 °C'],
+        correct: 0,
+        exp: 'El PVC actúa como aislante eléctrico, no se oxida y soporta temperaturas que van de los -5 °C a los 60 °C (Pág. 45).'
+      },
+      {
+        id: 12,
+        q: '¿Qué accesorio se utiliza para empalmar en línea recta dos tramos de tubo rígido del mismo diámetro?',
+        opts: ['Manguito', 'Curva de 90°', 'Cono métrico', 'Bastidor'],
+        correct: 0,
+        exp: 'El manguito permite unir en línea recta dos tubos del mismo diámetro (Pág. 46).'
+      }
+    ];
+
+    const TEXT_QUESTIONS = [
+      {
+        id: 't1',
+        prompt: '1. Distancia estandarizada (en mm) entre los tornillos del bastidor en un cajillo universal:',
+        placeholder: 'Ej: 60',
+        accepted: ['60', '60 mm', '60mm'],
+        hint: '60 mm'
+      },
+      {
+        id: 't2',
+        prompt: '2. Distancia máxima (en metros) entre cajas de registro en un tramo recto de canalización:',
+        placeholder: 'Ej: 15',
+        accepted: ['15', '15 m', '15m', '15 metros'],
+        hint: '15 m'
+      },
+      {
+        id: 't3',
+        prompt: '3. Distancia máxima (en metros o cm) entre bridas o abrazaderas al sujetar un tubo:',
+        placeholder: 'Ej: 0,50 m o 50 cm',
+        accepted: ['0,5', '0.5', '0,50', '0.50', '0,50 m', '0,5 m', '50 cm', '50cm', 'medio metro'],
+        hint: '0,50 m (50 cm)'
+      },
+      {
+        id: 't4',
+        prompt: '4. Letra con la que se conoce comercialmente al tubo rígido de PVC para superficie:',
+        placeholder: 'Ej: H',
+        accepted: ['h', 'tubo h'],
+        hint: 'Tubo H'
+      },
+      {
+        id: 't5',
+        prompt: '5. Según la tabla de la pág. 45, número máximo de cables de 1,5 mm² que caben en un tubo de Ø 32 mm:',
+        placeholder: 'Escribe el número...',
+        accepted: ['8', '8 cables', 'ocho'],
+        hint: '8 cables'
+      },
+      {
+        id: 't6',
+        prompt: '6. Si duplicamos el diámetro de un tubo (de 16 a 32 mm), ¿por qué número se multiplica su área o capacidad en cuadrados?',
+        placeholder: 'Escribe el número...',
+        accepted: ['4', 'x4', 'cuatro', 'por 4'],
+        hint: 'Se multiplica por 4 (x4)'
+      }
+    ];
+
+    const SELECT_QUESTIONS = [
+      {
+        id: 's1',
+        prompt: '1. Herramienta eléctrica empleada para curvar en caliente los tubos rígidos de PVC (Tubo H):',
+        opts: ['Selecciona...', 'Decapador de aire caliente', 'Soldador de estaño', 'Taladro percutor'],
+        correct: 'Decapador de aire caliente'
+      },
+      {
+        id: 's2',
+        prompt: '2. Zonas pre-cortadas en laterales y fondo de las cajas de empotrar para insertar los tubos:',
+        opts: ['Selecciona...', 'Troquelados', 'Prensaestopas', 'Manguitos'],
+        correct: 'Troquelados'
+      },
+      {
+        id: 's3',
+        prompt: '3. Tipo de cierre rápido que lleva la tapa de la caja de registro de superficie (Pág. 41):',
+        opts: ['Selecciona...', 'Tornillo 1/4 vuelta', 'Candado de combinación', 'Remache metálico'],
+        correct: 'Tornillo 1/4 vuelta'
+      },
+      {
+        id: 's4',
+        prompt: '4. ¿Cuándo deben introducirse normalmente los conductores eléctricos dentro de los tubos?',
+        opts: ['Selecciona...', 'Una vez colocados y fijados los tubos', 'Antes de fabricar el tubo', 'Antes de hacer la pared'],
+        correct: 'Una vez colocados y fijados los tubos'
+      },
+      {
+        id: 's5',
+        prompt: '5. Según la tabla (Pág. 45), ¿cuántos cables de 6 mm² caben en un tubo de Ø 16 mm?',
+        opts: ['Selecciona...', '2 cables', '5 cables', '8 cables'],
+        correct: '2 cables'
+      },
+      {
+        id: 's6',
+        prompt: '6. Accesorio anillado que sirve para realizar giros con ángulo adaptable entre tubos rígidos:',
+        opts: ['Selecciona...', 'Curva flexible', 'Manguito recto', 'Grapa metálica'],
+        correct: 'Curva flexible'
+      }
+    ];
+
+    const MATCHING_ROUNDS = [
+      {
+        title: 'Ronda 1: Medidas y Normativa del Tema 4',
+        pairs: [
+          { id: 'm1', left: '60 mm', right: 'Distancia estándar entre orificios de bastidor en cajillo' },
+          { id: 'm2', left: '0,50 m (50 cm)', right: 'Separación máxima entre bridas o abrazaderas' },
+          { id: 'm3', left: '15 m', right: 'Separación máxima entre registros en tramos rectos' },
+          { id: 'm4', left: '-5 °C a 60 °C', right: 'Rango de temperaturas que soporta el tubo de PVC' },
+          { id: 'm5', left: '16, 20, 25, 32, 40, 50 mm', right: 'Diámetros comerciales más habituales de los tubos' }
+        ]
+      },
+      {
+        title: 'Ronda 2: Tubos, Materiales y Accesorios',
+        pairs: [
+          { id: 'c1', left: 'Tubo Corrugado Flexible', right: 'Instalación empotrada; tiene estrías para fijarse en obra' },
+          { id: 'c2', left: 'Tubo H (PVC Rígido)', right: 'Montaje en superficie; se curva con decapador de aire caliente' },
+          { id: 'c3', left: 'Tubo Libre de Halógenos', right: 'Hospitales y escuelas: no emite gases tóxicos ni daña equipos' },
+          { id: 'c4', left: 'Tubo Metálico de Acero', right: 'Talleres con maquinaria; requiere puesta a tierra' },
+          { id: 'c5', left: 'Manguito', right: 'Accesorio recto para unir dos tubos del mismo diámetro' }
+        ]
+      },
+      {
+        title: 'Ronda 3: Cajas de Registro y Tabla de Capacidades',
+        pairs: [
+          { id: 'j1', left: 'Cono métrico (Pasacables)', right: 'Pieza escalonada en caja de superficie que se corta a medida' },
+          { id: 'j2', left: 'Prensaestopas vs Racor', right: 'El 1º sujeta mangueras y el 2º sujeta tubos en la caja' },
+          { id: 'j3', left: 'Tubo Ø 16 mm con 2,5 mm²', right: 'Capacidad máxima oficial: 4 cables' },
+          { id: 'j4', left: 'Tubo Ø 20 mm con 4 mm²', right: 'Capacidad máxima oficial: 5 cables' },
+          { id: 'j5', left: 'Tubo Ø 32 mm con 1,5 mm²', right: 'Capacidad máxima oficial: 8 cables' }
+        ]
+      }
+    ];
+
+    // ==========================================
+    // 2. ESTADO GLOBAL DE LA APLICACIÓN
+    // ==========================================
+    let state = {
+      compTubeA: 16,
+      compTubeB: 32,
+      showSquares: true,
+
+      simDia: 20,
+      simSec: '2.5',
+      simCount: 4,
+      simGrouping: 'unipolar',
+
+      activeCaseIdx: 0,
+      caseChoices: {},
+      caseVerified: false,
+
+      quizChoices: {},
+      quizGraded: false,
+      textValidated: {},
+      selectChoices: {},
+
+      matchRoundIdx: 0,
+      selectedLeftId: null,
+      userMatches: {} // { leftId: rightId }
+    };
+
+    // ==========================================
+    // 3. UTILIDADES Y SISTEMA DE PUNTOS XP
+    // ==========================================
+    function showToast(msg) {
+      const box = document.getElementById('toast-box');
+      box.textContent = msg;
+      box.classList.add('show');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => box.classList.remove('show'), 3200);
+    }
+
+    function updateXP() {
+      let xp = 0;
+      // Puntos Test
+      QUIZ_QUESTIONS.forEach(q => {
+        if (state.quizChoices[q.id] === q.correct) xp += 10;
+      });
+      // Puntos Texto
+      Object.values(state.textValidated).forEach(ok => {
+        if (ok) xp += 10;
+      });
+      // Puntos Selects
+      SELECT_QUESTIONS.forEach(s => {
+        if (state.selectChoices[s.id] === s.correct) xp += 8;
+      });
+      // Puntos Une con flechas
+      Object.entries(state.userMatches).forEach(([l, r]) => {
+        if (l === r) xp += 8;
+      });
+      document.getElementById('xp-counter').textContent = `${xp} XP`;
+    }
+
+    function switchMainTab(tabId) {
+      ['canva', 'geometria', 'taller', 'evaluacion'].forEach(id => {
+        const sec = document.getElementById('tab-' + id);
+        const btn = document.getElementById('nav-btn-' + id);
+        if (id === tabId) {
+          sec.classList.add('active');
+          btn.className = 'nav-tab-btn px-3 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition flex items-center justify-center gap-2 bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20';
+        } else {
+          sec.classList.remove('active');
+          btn.className = 'nav-tab-btn px-3 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition flex items-center justify-center gap-2 bg-slate-800/90 text-slate-300 hover:bg-slate-700 hover:text-white';
+        }
+      });
+    }
+
+    // ==========================================
+    // 4. FUNCIONES PESTAÑA 1: CANVA CONCEPTOS
+    // ==========================================
+    function setCajilloView(mode) {
+      const emp = document.getElementById('cajillo-view-empotrado');
+      const sup = document.getElementById('cajillo-view-superficie');
+      const bEmp = document.getElementById('btn-caj-emp');
+      const bSup = document.getElementById('btn-caj-sup');
+
+      if (mode === 'empotrado') {
+        emp.classList.remove('hidden');
+        sup.classList.add('hidden');
+        bEmp.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition';
+        bSup.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:text-white transition';
+      } else {
+        emp.classList.add('hidden');
+        sup.classList.remove('hidden');
+        bSup.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition';
+        bEmp.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:text-white transition';
+      }
+    }
+
+    function selectBoxAnatomy(partKey) {
+      ['cono', 'precinto', 'puerta', 'tornillo'].forEach(k => {
+        const btn = document.getElementById('anat-btn-' + k);
+        if (k === partKey) {
+          btn.className = 'anat-btn p-2.5 rounded-xl text-left border transition bg-amber-500/20 border-amber-500 text-white';
+        } else {
+          btn.className = 'anat-btn p-2.5 rounded-xl text-left border transition bg-slate-900 border-slate-800 text-slate-400 hover:text-white';
+        }
+      });
+      const data = BOX_ANATOMY_INFO[partKey];
+      document.getElementById('anatomy-detail-box').innerHTML = `
+        <div class="font-extrabold text-amber-400 text-sm">${data.title}</div>
+        <p class="text-slate-300 leading-relaxed">${data.desc}</p>
+        ${data.extra}
+      `;
+    }
+
+    function selectTubeMaterial(matKey) {
+      ['corrugado', 'tuboh', 'metalico', 'halogenos'].forEach(k => {
+        const btn = document.getElementById('mat-btn-' + k);
+        if (k === matKey) {
+          btn.className = 'mat-btn px-3 py-1.5 rounded-xl text-xs font-extrabold border transition bg-amber-500 text-slate-950 border-amber-400';
+        } else {
+          btn.className = 'mat-btn px-3 py-1.5 rounded-xl text-xs font-extrabold border transition bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-600';
+        }
+      });
+      const info = TUBE_MATERIALS_INFO[matKey];
+      document.getElementById('tube-material-detail').innerHTML = `
+        <span class="inline-block text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700">
+          ${info.badge}
+        </span>
+        <h4 class="text-lg font-black ${info.color}">${info.title}</h4>
+        <p class="text-sm text-slate-300 leading-relaxed">${info.desc}</p>
+      `;
+    }
+
+    // ==========================================
+    // 5. FUNCIONES PESTAÑA 2: CUADRADOS Y SIMULADOR DE TUBOS
+    // ==========================================
+    function toggleSquareOverlay() {
+      state.showSquares = !state.showSquares;
+      renderSquareComparison();
+    }
+
+    function renderSquareComparison() {
+      // Botones selectores A y B
+      const containerA = document.getElementById('comp-btns-a');
+      const containerB = document.getElementById('comp-btns-b');
+
+      containerA.innerHTML = COMMERCIAL_DIAMETERS.map(d => `
+        <button onclick="state.compTubeA=${d}; renderSquareComparison();"
+          class="py-1.5 rounded-lg text-xs font-extrabold border transition ${state.compTubeA === d ? 'bg-blue-500 text-white border-blue-400' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'}">
+          ${d}
+        </button>
+      `).join('');
+
+      containerB.innerHTML = COMMERCIAL_DIAMETERS.map(d => `
+        <button onclick="state.compTubeB=${d}; renderSquareComparison();"
+          class="py-1.5 rounded-lg text-xs font-extrabold border transition ${state.compTubeB === d ? 'bg-amber-500 text-slate-950 border-amber-400' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'}">
+          ${d}
+        </button>
+      `).join('');
+
+      const dA = state.compTubeA;
+      const dB = state.compTubeB;
+
+      document.getElementById('comp-title-a').textContent = `Tubo A: Ø ${dA} mm`;
+      document.getElementById('comp-title-b').textContent = `Tubo B: Ø ${dB} mm`;
+
+      // Dibujar SVG A
+      const sizeA = dA * 2.9;
+      const startA = (185 - sizeA) / 2;
+      document.getElementById('svg-comp-a').innerHTML = `
+        ${state.showSquares ? `<rect x="${startA}" y="${startA}" width="${sizeA}" height="${sizeA}" fill="rgba(59,130,246,0.14)" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4 2" />` : ''}
+        <circle cx="92.5" cy="92.5" r="${sizeA / 2}" fill="rgba(59,130,246,0.28)" stroke="#60a5fa" stroke-width="3" />
+        <line x1="${startA}" y1="92.5" x2="${startA + sizeA}" y2="92.5" stroke="#93c5fd" stroke-width="1.5" />
+        <text x="92.5" y="88" text-anchor="middle" fill="#fff" font-size="11" font-weight="800">Ø ${dA} mm</text>
+      `;
+
+      // Dibujar SVG B (con subdivisión en 4 cuadrados para visualizar la regla del cuadrado)
+      const sizeB = dB * 2.9;
+      const startB = (185 - sizeB) / 2;
+      const halfB = sizeB / 2;
+      document.getElementById('svg-comp-b').innerHTML = `
+        ${state.showSquares ? `
+          <rect x="${startB}" y="${startB}" width="${sizeB}" height="${sizeB}" fill="rgba(245,158,11,0.14)" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 2" />
+          <line x1="${startB + halfB}" y1="${startB}" x2="${startB + halfB}" y2="${startB + sizeB}" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3 3" />
+          <line x1="${startB}" y1="${startB + halfB}" x2="${startB + sizeB}" y2="${startB + halfB}" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3 3" />
+        ` : ''}
+        <circle cx="92.5" cy="92.5" r="${sizeB / 2}" fill="rgba(245,158,11,0.28)" stroke="#fbbf24" stroke-width="3" />
+        <line x1="${startB}" y1="92.5" x2="${startB + sizeB}" y2="92.5" stroke="#fde68a" stroke-width="1.5" />
+        <text x="92.5" y="88" text-anchor="middle" fill="#fff" font-size="11" font-weight="800">Ø ${dB} mm</text>
+      `;
+
+      const sqA = dA * dA;
+      const sqB = dB * dB;
+      const areaA = Math.round(Math.PI * Math.pow(dA / 2, 2));
+      const areaB = Math.round(Math.PI * Math.pow(dB / 2, 2));
+      const unitsA = (sqA / 256).toFixed(2);
+      const unitsB = (sqB / 256).toFixed(2);
+
+      document.getElementById('comp-stats-a').innerHTML = `
+        <div>Cuadrado (${dA}×${dA}): <strong class="text-blue-400 font-mono-tech">${sqA} mm²</strong></div>
+        <div>Área Circular ($\pi \cdot r^2$): <strong class="text-white font-mono-tech">${areaA} mm²</strong></div>
+        <div>Unidades Base (vs Ø16): <strong class="text-emerald-400 font-mono-tech">${unitsA} u</strong></div>
+      `;
+
+      document.getElementById('comp-stats-b').innerHTML = `
+        <div>Cuadrado (${dB}×${dB}): <strong class="text-amber-400 font-mono-tech">${sqB} mm²</strong></div>
+        <div>Área Circular ($\pi \cdot r^2$): <strong class="text-white font-mono-tech">${areaB} mm²</strong></div>
+        <div>Unidades Base (vs Ø16): <strong class="text-emerald-400 font-mono-tech">${unitsB} u</strong></div>
+      `;
+
+      const ratioD = (dB / dA).toFixed(2);
+      const ratioArea = (sqB / sqA).toFixed(2);
+      document.getElementById('comp-ratio-banner').innerHTML = `
+        <div>Relación de Diámetros (${dB}/${dA}): <strong class="text-white font-mono-tech">x${ratioD} veces más ancho</strong></div>
+        <div>Relación de Superficie / Unidades (${sqB}/${sqA}): <strong class="text-amber-400 text-sm font-mono-tech">¡x${ratioArea} veces más capacidad!</strong></div>
+      `;
+    }
+
+    function setCableGrouping(mode) {
+      state.simGrouping = mode;
+      document.getElementById('grp-btn-unipolar').className = mode === 'unipolar'
+        ? 'px-3 py-1.5 rounded-lg font-extrabold bg-amber-500 text-slate-950 transition'
+        : 'px-3 py-1.5 rounded-lg font-extrabold text-slate-400 hover:text-white transition';
+      document.getElementById('grp-btn-manguera').className = mode === 'manguera'
+        ? 'px-3 py-1.5 rounded-lg font-extrabold bg-amber-500 text-slate-950 transition'
+        : 'px-3 py-1.5 rounded-lg font-extrabold text-slate-400 hover:text-white transition';
+      updateTubeSimulator();
+    }
+
+    function updateTubeSimulator() {
+      const slider = document.getElementById('sim-count-slider');
+      state.simCount = Number(slider.value);
+
+      // Renderizar botones de diámetro (16, 20, 25, 32)
+      document.getElementById('sim-dia-btns').innerHTML = [16, 20, 25, 32].map(d => `
+        <button onclick="state.simDia=${d}; updateTubeSimulator();"
+          class="py-1.5 rounded-lg text-xs font-extrabold border transition ${state.simDia === d ? 'bg-amber-500 text-slate-950 border-amber-400' : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600'}">
+          Ø ${d} mm
+        </button>
+      `).join('');
+
+      // Renderizar botones de sección (1.5, 2.5, 4, 6)
+      document.getElementById('sim-sec-btns').innerHTML = ['1.5', '2.5', '4', '6'].map(s => `
+        <button onclick="state.simSec='${s}'; updateTubeSimulator();"
+          class="py-1.5 rounded-lg text-xs font-extrabold border transition ${state.simSec === s ? 'bg-blue-500 text-white border-blue-400' : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-600'}">
+          ${CABLE_SPECS[s].label}
+        </button>
+      `).join('');
+
+      const maxAllowed = TUBE_CAPACITY_TABLE[state.simDia][state.simSec];
+      const overloaded = state.simCount > maxAllowed;
+
+      document.getElementById('sim-count-label').textContent = `${state.simCount} cables`;
+      document.getElementById('sim-max-hint').textContent = `Máx tabla: ${maxAllowed}`;
+      document.getElementById('sim-sec-explain').textContent = CABLE_SPECS[state.simSec].label;
+
+      // Dibujo SVG de sección transversal con pared verde y grapa (Pág. 43)
+      const positions = [
+        { x: 75, y: 122 },
+        { x: 96, y: 125 },
+        { x: 117, y: 122 },
+        { x: 85, y: 103 },
+        { x: 107, y: 103 },
+        { x: 66, y: 102 },
+        { x: 126, y: 102 },
+        { x: 96, y: 84 },
+        { x: 77, y: 82 },
+        { x: 115, y: 82 }
+      ];
+      const rCable = 6 + Number(state.simSec) * 1.1;
+
+      let cablesSvg = '';
+      for (let i = 0; i < state.simCount; i++) {
+        const pos = positions[i] || { x: 96, y: 90 };
+        cablesSvg += `
+          <g>
+            <circle cx="${pos.x}" cy="${pos.y}" r="${rCable}" fill="#cbd5e1" stroke="#475569" stroke-width="1.5" />
+            <circle cx="${pos.x}" cy="${pos.y}" r="${rCable * 0.42}" fill="#16a34a" stroke="#14532d" stroke-width="1" />
+          </g>
+        `;
+      }
+
+      document.getElementById('svg-tube-cross').innerHTML = `
+        <!-- Pared vertical verde (como en Pág. 43) -->
+        <rect x="16" y="15" width="12" height="170" fill="#86efac" stroke="#166534" stroke-width="2" />
+        <!-- Abrazadera / Grapa envolvente -->
+        <path d="M 28 145 L 96 145 A 55 55 0 0 0 96 35 L 96 45 A 45 45 0 0 1 96 135 L 39 135 L 39 165 L 28 165 Z" fill="#e2e8f0" stroke="#475569" stroke-width="2" />
+        <!-- Tubo Protector -->
+        <circle cx="96" cy="90" r="52" fill="#0f172a" stroke="${overloaded ? '#ef4444' : '#f8fafc'}" stroke-width="4" />
+        ${state.simGrouping === 'manguera' ? `<circle cx="96" cy="108" r="32" fill="rgba(134, 239, 172, 0.22)" stroke="#22c55e" stroke-width="2" />` : ''}
+        ${cablesSvg}
+      `;
+
+      // Caja de estado
+      const statusBox = document.getElementById('sim-status-box');
+      if (overloaded) {
+        statusBox.className = 'p-3.5 rounded-xl border bg-red-950/50 border-red-500 text-red-200';
+        statusBox.innerHTML = `
+          <div class="font-black text-sm text-red-400 mb-1">❌ ¡EXCESO DE CABLES! No cumple la tabla oficial</div>
+          <p class="text-xs">El tubo de <strong>Ø ${state.simDia} mm</strong> admite como máximo <strong>${maxAllowed} cables</strong> de <strong>${CABLE_SPECS[state.simSec].label}</strong> y has metido <strong>${state.simCount}</strong>. Elige un diámetro superior.</p>
+        `;
+      } else {
+        statusBox.className = 'p-3.5 rounded-xl border bg-emerald-950/40 border-emerald-500/50 text-emerald-200';
+        statusBox.innerHTML = `
+          <div class="font-black text-sm text-emerald-400 mb-1">✅ ¡INSTALACIÓN CORRECTA! Cumple la tabla UT4</div>
+          <p class="text-xs">En un tubo de <strong>Ø ${state.simDia} mm</strong> caben hasta <strong>${maxAllowed} cables</strong> de <strong>${CABLE_SPECS[state.simSec].label}</strong> (${CABLE_SPECS[state.simSec].use}). Actualmente llevas <strong>${state.simCount}</strong>.</p>
+        `;
+      }
+
+      renderOfficialTable();
+    }
+
+    function renderOfficialTable() {
+      const tbody = document.getElementById('official-table-body');
+      tbody.innerHTML = [16, 20, 25, 32].map(dia => `
+        <tr class="hover:bg-slate-800/40">
+          <td class="p-2.5 font-black text-amber-400 bg-slate-950/70 font-mono-tech">${dia} mm</td>
+          ${['1.5', '2.5', '4', '6'].map(sec => {
+            const val = TUBE_CAPACITY_TABLE[dia][sec];
+            const active = state.simDia === dia && state.simSec === sec;
+            return `
+              <td class="p-1.5 text-center">
+                <button onclick="state.simDia=${dia}; state.simSec='${sec}'; document.getElementById('sim-count-slider').value=${val}; updateTubeSimulator();"
+                  class="w-full py-2 px-1 rounded-lg font-bold transition ${active ? 'bg-amber-500 text-slate-950 shadow-md ring-2 ring-amber-300' : 'bg-slate-950 text-slate-300 hover:bg-slate-800'}">
+                  ${val} cables
+                </button>
+              </td>
+            `;
+          }).join('')}
+        </tr>
+      `).join('');
+    }
+
+    // ==========================================
+    // 6. FUNCIONES PESTAÑA 3: SIMULADOR DE OBRA
+    // ==========================================
+    function renderWorkshopSimulator() {
+      const tabsContainer = document.getElementById('workshop-case-tabs');
+      tabsContainer.innerHTML = WORKSHOP_CASES.map((c, idx) => `
+        <button onclick="state.activeCaseIdx=${idx}; state.caseChoices={}; state.caseVerified=false; renderWorkshopSimulator();"
+          class="px-4 py-2 rounded-xl text-xs font-extrabold border transition ${state.activeCaseIdx === idx ? 'bg-amber-500 text-slate-950 border-amber-400' : 'bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-600'}">
+          Proyecto ${idx + 1}
+        </button>
+      `).join('');
+
+      const activeCase = WORKSHOP_CASES[state.activeCaseIdx];
+      const content = document.getElementById('workshop-case-content');
+
+      const questionsHtml = activeCase.questions.map(qObj => {
+        const optsHtml = qObj.opts.map(opt => {
+          const selected = state.caseChoices[qObj.key] === opt;
+          const isCorrect = opt === qObj.correct;
+          let cls = 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-600';
+          if (selected) cls = 'bg-amber-500/20 border-amber-500 text-white';
+          if (state.caseVerified) {
+            if (isCorrect) cls = 'bg-emerald-500/20 border-emerald-500 text-emerald-200';
+            else if (selected && !isCorrect) cls = 'bg-red-500/20 border-red-500 text-red-200';
+          }
+          return `
+            <button onclick="selectCaseOption('${qObj.key}', '${opt.replace(/'/g, "\\'")}')"
+              class="w-full text-left p-3 rounded-xl border text-xs font-bold transition ${cls}">
+              ${opt}
+            </button>
+          `;
+        }).join('');
+
+        return `
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="text-sm font-extrabold text-white">${qObj.q}</div>
+            <div class="space-y-2">${optsHtml}</div>
+          </div>
+        `;
+      }).join('');
+
+      const allRight = activeCase.questions.every(q => state.caseChoices[q.key] === q.correct);
+
+      content.innerHTML = `
+        <div class="bg-slate-950 border border-amber-500/30 rounded-xl p-5">
+          <div class="text-xs font-extrabold text-amber-400 uppercase mb-1">${activeCase.client}</div>
+          <p class="text-base font-semibold text-white">“${activeCase.scenario}”</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">${questionsHtml}</div>
+        <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
+          <button onclick="state.caseVerified=true; renderWorkshopSimulator();"
+            class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-6 py-3 rounded-xl text-sm transition shadow-lg shadow-amber-500/20">
+            🔍 Verificar Decisiones de Obra
+          </button>
+          ${state.caseVerified ? `
+            <div class="text-sm font-extrabold ${allRight ? 'text-emerald-400' : 'text-amber-400'}">
+              ${allRight ? '✅ ¡Enhorabuena! Proyecto 100% conforme al REBT y tablas UT4.' : '⚠️ Hay parámetros incorrectos. Fíjate en las respuestas marcadas en verde.'}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function selectCaseOption(key, val) {
+      state.caseChoices[key] = val;
+      state.caseVerified = false;
+      renderWorkshopSimulator();
+    }
+
+    // ==========================================
+    // 7. FUNCIONES PESTAÑA 4: TEST, TEXTO, SELECCIÓN Y FLECHAS
+    // ==========================================
+    function switchEvalMode(mode) {
+      ['test', 'texto', 'flechas'].forEach(m => {
+        document.getElementById('eval-view-' + m).classList.toggle('hidden', m !== mode);
+        document.getElementById('eval-btn-' + m).className = m === mode
+          ? 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition bg-amber-500 text-slate-950'
+          : 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition bg-slate-950 text-slate-300 hover:bg-slate-800';
+      });
+    }
+
+    function renderQuizTest() {
+      const grid = document.getElementById('quiz-questions-grid');
+      grid.innerHTML = QUIZ_QUESTIONS.map((q, idx) => {
+        const chosen = state.quizChoices[q.id];
+        const isRight = chosen === q.correct;
+
+        const optsHtml = q.opts.map((opt, oIdx) => {
+          const selected = chosen === oIdx;
+          let cls = 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700';
+          if (selected) cls = 'bg-amber-500/20 border-amber-500 text-white';
+          if (state.quizGraded) {
+            if (oIdx === q.correct) cls = 'bg-emerald-500/20 border-emerald-500 text-emerald-200';
+            else if (selected && oIdx !== q.correct) cls = 'bg-red-500/20 border-red-500 text-red-200';
+          }
+          return `
+            <button onclick="state.quizChoices[${q.id}]=${oIdx}; renderQuizTest(); updateXP();"
+              class="w-full text-left p-2.5 rounded-xl border text-xs font-semibold transition flex items-center gap-2.5 ${cls}">
+              <span class="w-5 h-5 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-[10px] font-extrabold shrink-0">
+                ${['A', 'B', 'C', 'D'][oIdx]}
+              </span>
+              <span>${opt}</span>
+            </button>
+          `;
+        }).join('');
+
+        return `
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between space-y-4">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-black px-2.5 py-0.5 rounded bg-slate-800 text-amber-400">Pregunta ${idx + 1}</span>
+                ${state.quizGraded && chosen !== undefined ? `
+                  <span class="text-xs font-extrabold ${isRight ? 'text-emerald-400' : 'text-red-400'}">
+                    ${isRight ? '✔ Correcta (+10 XP)' : '✘ Incorrecta'}
+                  </span>
+                ` : ''}
+              </div>
+              <h4 class="text-sm font-extrabold text-white leading-snug">${q.q}</h4>
+              <div class="space-y-2">${optsHtml}</div>
+            </div>
+            ${state.quizGraded ? `
+              <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-300">
+                <strong class="text-amber-400">Explicación:</strong> ${q.exp}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      const answeredCount = Object.keys(state.quizChoices).length;
+      document.getElementById('quiz-progress-text').innerHTML = `Has respondido <strong class="text-white">${answeredCount} de ${QUIZ_QUESTIONS.length}</strong> preguntas tipo test.`;
+    }
+
+    function gradeQuizTest() {
+      state.quizGraded = true;
+      renderQuizTest();
+      updateXP();
+      showToast('✅ Examen tipo test corregido. Revisa las explicaciones.');
+    }
+
+    function renderTextAndSelectQuestions() {
+      const textGrid = document.getElementById('text-questions-grid');
+      textGrid.innerHTML = TEXT_QUESTIONS.map(tq => {
+        const valStatus = state.textValidated[tq.id];
+        let borderCls = 'border-slate-700';
+        if (valStatus === true) borderCls = 'border-emerald-500';
+        if (valStatus === false) borderCls = 'border-red-500';
+
+        return `
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2">
+            <label class="text-xs font-bold text-white block">${tq.prompt}</label>
+            <input id="input-${tq.id}" type="text" placeholder="${tq.placeholder}"
+              class="w-full p-2.5 rounded-lg text-xs font-bold bg-slate-900 text-white border ${borderCls} focus:outline-none" />
+            ${valStatus !== undefined ? `
+              <div class="text-[11px] font-bold ${valStatus ? 'text-emerald-400' : 'text-red-400'}">
+                ${valStatus ? '✔ ¡Exacto! (+10 XP)' : `✘ Respuesta oficial: ${tq.hint}`}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      const selGrid = document.getElementById('select-questions-grid');
+      selGrid.innerHTML = SELECT_QUESTIONS.map(sq => {
+        const cur = state.selectChoices[sq.id] || 'Selecciona...';
+        const answered = cur !== 'Selecciona...';
+        const ok = cur === sq.correct;
+        return `
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2">
+            <label class="text-xs font-bold text-white block">${sq.prompt}</label>
+            <select onchange="state.selectChoices['${sq.id}']=this.value; renderTextAndSelectQuestions(); updateXP();"
+              class="w-full p-2.5 rounded-lg text-xs font-bold bg-slate-900 border ${!answered ? 'border-slate-700 text-slate-300' : ok ? 'border-emerald-500 text-emerald-400' : 'border-red-500 text-red-400'}">
+              ${sq.opts.map(o => `<option value="${o}" ${cur === o ? 'selected' : ''}>${o}</option>`).join('')}
+            </select>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function checkTextQuestions() {
+      TEXT_QUESTIONS.forEach(tq => {
+        const el = document.getElementById('input-' + tq.id);
+        if (!el) return;
+        const raw = el.value.trim().toLowerCase();
+        const isOk = tq.accepted.includes(raw);
+        state.textValidated[tq.id] = isOk;
+      });
+      renderTextAndSelectQuestions();
+      updateXP();
+      showToast('⌨️ Respuestas de texto verificadas.');
+    }
+
+    // ==========================================
+    // 8. UNE CON FLECHAS INTERACTIVO
+    // ==========================================
+    function setMatchingRound(rIdx) {
+      state.matchRoundIdx = rIdx;
+      state.selectedLeftId = null;
+      [0, 1, 2].forEach(i => {
+        document.getElementById('mround-btn-' + i).className = i === rIdx
+          ? 'px-3 py-1.5 rounded-xl text-xs font-extrabold border bg-amber-500 text-slate-950 border-amber-400'
+          : 'px-3 py-1.5 rounded-xl text-xs font-extrabold border bg-slate-950 text-slate-300 border-slate-800';
+      });
+      renderMatchingBoard();
+    }
+
+    function clearCurrentMatchingRound() {
+      const round = MATCHING_ROUNDS[state.matchRoundIdx];
+      round.pairs.forEach(p => delete state.userMatches[p.id]);
+      state.selectedLeftId = null;
+      renderMatchingBoard();
+      updateXP();
+    }
+
+    function renderMatchingBoard() {
+      const round = MATCHING_ROUNDS[state.matchRoundIdx];
+      document.getElementById('match-round-title').textContent = round.title;
+
+      // Desorden fijo pedagógico para la columna derecha
+      const p = round.pairs;
+      const rightOrder = [p[2], p[4], p[0], p[3], p[1]];
+
+      // Columna izquierda
+      document.getElementById('match-left-col').innerHTML = p.map((item, idx) => {
+        const selected = state.selectedLeftId === item.id;
+        const targetId = state.userMatches[item.id];
+        const matched = Boolean(targetId);
+        const ok = targetId === item.id;
+
+        let cls = 'bg-slate-950 border-slate-800 text-white hover:border-slate-600';
+        if (selected) cls = 'bg-amber-500 text-slate-950 border-amber-300 scale-[1.02]';
+        else if (matched) cls = ok ? 'bg-emerald-950/50 border-emerald-500 text-emerald-200' : 'bg-red-950/50 border-red-500 text-red-200';
+
+        return `
+          <button onclick="clickMatchLeft('${item.id}')"
+            class="w-full p-3.5 rounded-xl border text-left text-xs font-extrabold transition flex items-center justify-between ${cls}">
+            <span class="flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 flex items-center justify-center text-[10px]">${idx + 1}</span>
+              <span>${item.left}</span>
+            </span>
+            <span>●</span>
+          </button>
+        `;
+      }).join('');
+
+      // Columna derecha
+      document.getElementById('match-right-col').innerHTML = rightOrder.map(item => {
+        const entry = Object.entries(state.userMatches).find(([, rId]) => rId === item.id);
+        const matched = Boolean(entry);
+        const ok = entry && entry[0] === item.id;
+
+        let cls = state.selectedLeftId
+          ? 'bg-slate-950 border-amber-500/50 text-slate-200 hover:bg-amber-500/10'
+          : 'bg-slate-950 border-slate-800 text-slate-300';
+        if (matched) cls = ok ? 'bg-emerald-950/50 border-emerald-500 text-emerald-200' : 'bg-red-950/50 border-red-500 text-red-200';
+
+        return `
+          <button onclick="clickMatchRight('${item.id}')"
+            class="w-full p-3.5 rounded-xl border text-left text-xs font-semibold transition flex items-center justify-between ${cls}">
+            <span>${item.right}</span>
+            ${matched ? `<span class="ml-2 font-black">${ok ? '✔' : '✘'}</span>` : ''}
+          </button>
+        `;
+      }).join('');
+
+      // Dibujar líneas SVG
+      let linesSvg = `
+        <defs>
+          <marker id="arrOk" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#10b981" />
+          </marker>
+          <marker id="arrErr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#ef4444" />
+          </marker>
+        </defs>
+      `;
+
+      p.forEach((leftItem, lIdx) => {
+        const rId = state.userMatches[leftItem.id];
+        if (!rId) return;
+        const rIdx = rightOrder.findIndex(r => r.id === rId);
+        if (rIdx === -1) return;
+        const y1 = 28 + lIdx * 62;
+        const y2 = 28 + rIdx * 62;
+        const ok = rId === leftItem.id;
+        linesSvg += `
+          <line x1="4" y1="${y1}" x2="216" y2="${y2}"
+            stroke="${ok ? '#10b981' : '#ef4444'}" stroke-width="3"
+            marker-end="url(#${ok ? 'arrOk' : 'arrErr'})" />
+        `;
+      });
+
+      document.getElementById('match-svg-canvas').innerHTML = linesSvg;
+    }
+
+    function clickMatchLeft(leftId) {
+      state.selectedLeftId = state.selectedLeftId === leftId ? null : leftId;
+      renderMatchingBoard();
+    }
+
+    function clickMatchRight(rightId) {
+      if (!state.selectedLeftId) return;
+      state.userMatches[state.selectedLeftId] = rightId;
+      state.selectedLeftId = null;
+      renderMatchingBoard();
+      updateXP();
+    }
+
+    function resetAllEvaluations() {
+      state.quizChoices = {};
+      state.quizGraded = false;
+      state.textValidated = {};
+      state.selectChoices = {};
+      state.userMatches = {};
+      state.selectedLeftId = null;
+      renderQuizTest();
+      renderTextAndSelectQuestions();
+      renderMatchingBoard();
+      updateXP();
+      showToast('🔄 Todas las actividades han sido reiniciadas.');
+    }
+
+    function copyHtmlForCanva() {
+      const fullHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      const temp = document.createElement('textarea');
+      temp.value = fullHtml;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand('copy');
+      document.body.removeChild(temp);
+      showToast('🎨 Código HTML completo copiado al portapapeles.');
+    }
+
+    // ==========================================
+    // 9. INICIALIZACIÓN AL CARGAR LA PÁGINA
+    // ==========================================
+    window.onload = function () {
+      selectBoxAnatomy('cono');
+      selectTubeMaterial('corrugado');
+      renderSquareComparison();
+      updateTubeSimulator();
+      renderWorkshopSimulator();
+      renderQuizTest();
+      renderTextAndSelectQuestions();
+      renderMatchingBoard();
+    };
+  </script>
+</body>
+</html>

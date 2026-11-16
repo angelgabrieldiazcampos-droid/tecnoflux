@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UT3: Taller Interactivo de Mecanismos y Esquemas - DOMO 3013</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      user-select: none;
+      overflow-x: hidden;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    
+    /* Efecto realista de mecanismos 3D */
+    .mech-card {
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Animación de corriente eléctrica por los cables */
+    @keyframes flowAnimation {
+      to { stroke-dashoffset: -24; }
+    }
+    .current-flow {
+      stroke-dasharray: 8 4;
+      animation: flowAnimation 0.5s linear infinite;
+      filter: drop-shadow(0 0 6px #facc15);
+    }
+
+    /* Bornes interactivos */
+    .terminal-node {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .terminal-node:hover {
+      transform: scale(1.25);
+      filter: drop-shadow(0 0 8px #38bdf8);
+    }
+    .terminal-selected {
+      animation: pulseRing 1s infinite;
+    }
+    @keyframes pulseRing {
+      0% { r: 9px; stroke-width: 3px; stroke: #facc15; }
+      50% { r: 13px; stroke-width: 5px; stroke: #fef08a; }
+      100% { r: 9px; stroke-width: 3px; stroke: #facc15; }
+    }
+
+    /* Resplandor de bombilla encendida */
+    .bulb-on {
+      filter: drop-shadow(0 0 25px #fde047) drop-shadow(0 0 45px #eab308);
+    }
+    
+    /* Scrollbar personalizada */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- BARRA SUPERIOR DE NAVEGACIÓN Y PUNTUACIÓN -->
+  <header class="bg-slate-900/95 border-b border-slate-700 sticky top-0 z-50 backdrop-blur">
+    <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Logo e Identidad Salesianos -->
+      <div class="flex items-center gap-3">
+        <div class="bg-red-600 text-white font-black px-2.5 py-1.5 rounded-lg shadow-md flex items-center gap-1.5 text-sm">
+          <span>⚡</span>
+          <span>SALESIANOS</span>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-sm md:text-base tracking-tight text-white flex items-center gap-2">
+            3013. DOMO — LABORATORIO TÁCTIL UT3
+            <span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-2 py-0.5 rounded-full font-bold">1º FP Básica</span>
+          </h1>
+          <p class="text-xs text-slate-400">Simbología, Anatomía de Mecanismos y Conmutaciones Reales</p>
+        </div>
+      </div>
+
+      <!-- Marcador de Puntos y Botón Canva -->
+      <div class="flex items-center gap-2.5">
+        <div class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-1.5 flex items-center gap-3">
+          <div class="text-right">
+            <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Puntos C.S.I.</div>
+            <div id="scoreDisplay" class="mono text-lg font-black text-emerald-400 leading-none">0 CR</div>
+          </div>
+          <div class="h-7 w-[1px] bg-slate-700"></div>
+          <div class="text-left">
+            <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Misiones</div>
+            <div id="badgeCounter" class="text-sm font-extrabold text-amber-400 leading-none">0 / 4 ⭐</div>
+          </div>
+        </div>
+
+        <button onclick="openCanvaModal()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition transform active:scale-95">
+          <span>🎨</span>
+          <span>Exportar a Canva</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- PESTAÑAS DE LAS 4 ESTACIONES DE TALLER -->
+    <div class="max-w-7xl mx-auto px-4 flex overflow-x-auto gap-1.5 pb-2 pt-1">
+      <button onclick="switchTab(1)" id="tabBtn1" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs md:text-sm flex items-center gap-2 transition whitespace-nowrap bg-sky-600 text-white shadow-md">
+        <span>🔍 1. Rayos X: Toca los Mecanismos</span>
+      </button>
+      <button onclick="switchTab(2)" id="tabBtn2" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs md:text-sm flex items-center gap-2 transition whitespace-nowrap bg-slate-800 text-slate-300 hover:bg-slate-700">
+        <span>🧩 2. Despiece y Montaje (4 Capas)</span>
+      </button>
+      <button onclick="switchTab(3)" id="tabBtn3" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs md:text-sm flex items-center gap-2 transition whitespace-nowrap bg-slate-800 text-slate-300 hover:bg-slate-700">
+        <span>🔌 3. Banco de Cableado (Conmutadas)</span>
+      </button>
+      <button onclick="switchTab(4)" id="tabBtn4" class="tab-btn px-4 py-2 rounded-lg font-bold text-xs md:text-sm flex items-center gap-2 transition whitespace-nowrap bg-slate-800 text-slate-300 hover:bg-slate-700">
+        <span>📐 4. Reto Símbolos y Plano</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4">
+
+    <!-- =====================================================================
+         ESTACIÓN 1: RAYOS X - EXPLORADOR TÁCTIL DE MECANISMOS REALES
+         ===================================================================== -->
+    <section id="station1" class="space-y-4">
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <span class="text-xs font-extrabold uppercase tracking-wider text-sky-400">Estación 1 · Exploración Interactiva</span>
+          <h2 class="text-xl font-black text-white">Toca, gira y pulsa los mecanismos para ver cómo funcionan por dentro</h2>
+          <p class="text-sm text-slate-300">Selecciona cada aparato del taller, dale la vuelta para ver sus <strong>bornes reales traseros</strong> y pulsa su tecla para ver qué contactos se unen.</p>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-xl border border-slate-700 text-xs">
+          <span class="text-amber-400 text-base">💡</span>
+          <span>Explora y acciona los <strong>6 mecanismos</strong> para ganar <strong>+250 CR</strong></span>
+        </div>
+      </div>
+
+      <!-- Selector de los 6 mecanismos clave de UT3 -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5" id="mechSelectorGrid">
+        <!-- Se genera dinámicamente -->
+      </div>
+
+      <!-- Panel Central de Manipulación del Mecanismo Seleccionado -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        
+        <!-- Vista física interactiva (Frontal / Trasera / Interior) -->
+        <div class="lg:col-span-7 mech-card border border-slate-700 rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700/80 pb-3">
+            <div>
+              <span id="inspectorBadge" class="text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">Mecanismo de Maniobra</span>
+              <h3 id="inspectorTitle" class="text-2xl font-black text-white mt-1">Interruptor Simple (Unipolar)</h3>
+            </div>
+            <!-- Botones para alternar vista y accionar -->
+            <div class="flex items-center gap-2">
+              <button onclick="toggleInspectorActuation()" id="actuateBtn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5 transition active:scale-95">
+                <span>👆</span>
+                <span id="actuateBtnText">PULSAR TECLA (Posición A/B)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Lienzo Visual Dual: Vista Trasera Real (Bornes) + Esquema Interno Vivo -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 items-center">
+            <!-- Columna 1: Recreación Fotográfica de la Parte Trasera (Bornes de apriete rápido/tornillo) -->
+            <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-4 flex flex-col items-center">
+              <div class="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1.5">
+                <span>📷</span>
+                <span>VISTA TRASERA REAL (BORNES)</span>
+              </div>
+              <div id="realBackSvgContainer" class="w-56 h-56 flex items-center justify-center">
+                <!-- SVG realista inyectado por JS -->
+              </div>
+              <p id="terminalHintText" class="text-xs text-center text-sky-300 font-semibold mt-2 bg-sky-950/60 border border-sky-800/60 rounded-lg px-3 py-1.5 w-full">
+                Toca cualquier borne o palanca en el dibujo para inspeccionarlo.
+              </p>
+            </div>
+
+            <!-- Columna 2: Interior en Rayos X (Cómo pasa la corriente al pulsar) -->
+            <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-4 flex flex-col items-center">
+              <div class="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1.5">
+                <span>⚡</span>
+                <span>INTERIOR EN VIVO (PULSA PARA CAMBIAR)</span>
+              </div>
+              <div id="internalXraySvgContainer" class="w-56 h-56 flex items-center justify-center cursor-pointer" onclick="toggleInspectorActuation()">
+                <!-- SVG funcional vivo inyectado por JS -->
+              </div>
+              <div id="stateIndicatorBadge" class="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 mt-2">
+                ESTADO: CERRADO (Pasa corriente)
+              </div>
+            </div>
+          </div>
+
+          <!-- Pie explicativo de bornes -->
+          <div id="inspectorBottomNote" class="bg-slate-950/90 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 leading-relaxed">
+            <!-- Texto detallado -->
+          </div>
+        </div>
+
+        <!-- Ficha de Simbología Normalizada (Unifilar vs Multifilar) -->
+        <div class="lg:col-span-5 mech-card border border-slate-700 rounded-2xl p-5 flex flex-col justify-between space-y-4">
+          <div>
+            <h4 class="text-sm font-extrabold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+              <span>📐</span>
+              <span>Simbología Oficial Normalizada (UT3)</span>
+            </h4>
+            <p class="text-xs text-slate-400 mt-1">Así se dibuja este elemento en los planos de taller y exámenes:</p>
+
+            <div class="grid grid-cols-2 gap-3 mt-4">
+              <!-- Símbolo Multifilar -->
+              <div class="bg-white text-slate-900 rounded-xl p-3 flex flex-col items-center justify-between shadow-inner border-2 border-slate-300">
+                <span class="text-[11px] font-black uppercase tracking-wider bg-slate-200 px-2 py-0.5 rounded text-slate-700">Símbolo Multifilar</span>
+                <div id="symMultifilarBox" class="h-28 w-full flex items-center justify-center my-1"></div>
+                <span class="text-[10px] text-slate-600 text-center font-semibold">Muestra todos los bornes y cables reales</span>
+              </div>
+
+              <!-- Símbolo Unifilar -->
+              <div class="bg-white text-slate-900 rounded-xl p-3 flex flex-col items-center justify-between shadow-inner border-2 border-slate-300">
+                <span class="text-[11px] font-black uppercase tracking-wider bg-slate-200 px-2 py-0.5 rounded text-slate-700">Símbolo Unifilar</span>
+                <div id="symUnifilarBox" class="h-28 w-full flex items-center justify-center my-1"></div>
+                <span class="text-[10px] text-slate-600 text-center font-semibold">Se usa sobre el plano de planta de la casa</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reglas de Oro de Conexionado de este mecanismo -->
+          <div class="bg-slate-900/90 border border-slate-700/80 rounded-xl p-4 space-y-2">
+            <div class="text-xs font-extrabold text-sky-400 uppercase flex items-center gap-1.5">
+              <span>🛠️</span>
+              <span>Regla de Taller y Colores REBT:</span>
+            </div>
+            <ul id="inspectorRulesList" class="text-xs text-slate-200 space-y-1.5 list-disc list-inside">
+              <!-- Reglas dinámicas -->
+            </ul>
+          </div>
+
+          <!-- Mini-pregunta de comprobación rápida -->
+          <div class="bg-indigo-950/50 border border-indigo-500/40 rounded-xl p-3.5">
+            <div class="text-xs font-extrabold text-indigo-300 mb-1.5" id="quickQuizQuestion">¿Cuántos cables como mínimo se conectan detrás de un conmutador simple?</div>
+            <div id="quickQuizOptions" class="grid grid-cols-2 gap-2">
+              <!-- Botones de respuesta rápida -->
+            </div>
+            <div id="quickQuizFeedback" class="text-xs font-bold mt-2 hidden"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         ESTACIÓN 2: DESPIECE Y ENSAMBLAJE DE UN MECANISMO EMPOTRADO (PÁG. 20 UT3)
+         ===================================================================== -->
+    <section id="station2" class="hidden space-y-5">
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <span class="text-xs font-extrabold uppercase tracking-wider text-amber-400">Estación 2 · Anatomía Mecánica (Pág. 20 UT3)</span>
+          <h2 class="text-xl font-black text-white">Ensambla en orden las piezas de un mecanismo empotrado</h2>
+          <p class="text-sm text-slate-300">En la pared hay un cajillo universal negro. Toca las piezas en el <strong>orden exacto en que un electricista las instala</strong> desde el fondo hacia afuera.</p>
+        </div>
+        <button onclick="resetAssemblyGame()" class="bg-slate-700 hover:bg-slate-600 text-xs font-bold px-3.5 py-2 rounded-xl transition">
+          🔄 Reiniciar Despiece
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        <!-- Piezas Desmontadas para Tocar -->
+        <div class="lg:col-span-7 space-y-3">
+          <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Toca cada pieza en el orden correcto de montaje (Pasos 1 al 5):</div>
+          <div id="assemblyPiecesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Tarjetas de piezas generadas por JS -->
+          </div>
+        </div>
+
+        <!-- Cajillo en la pared donde se van acoplando las capas -->
+        <div class="lg:col-span-5 mech-card border border-slate-700 rounded-2xl p-6 flex flex-col items-center">
+          <div class="text-xs font-bold text-slate-400 uppercase mb-2">Simulación de Pared en Taller</div>
+          <div id="wallMountSvgBox" class="w-72 h-72 bg-slate-900 rounded-2xl border-2 border-slate-700 flex items-center justify-center relative shadow-inner">
+            <!-- SVG dinámico por capas -->
+          </div>
+          <div id="assemblyStatusText" class="mt-4 text-sm font-bold text-center text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-2.5 w-full">
+            Paso actual: 0 / 5 piezas instaladas. ¡Empieza por la caja que va dentro del ladrillo!
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         ESTACIÓN 3: BANCO DE CABLEADO REAL Y SIMULADOR VIVO (CONMUTADAS)
+         ===================================================================== -->
+    <section id="station3" class="hidden space-y-4">
+      <!-- Cabecera de selección de Práctica de Cableado -->
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+        <div>
+          <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-400">Estación 3 · Simulador de Cableado y Colores REBT</span>
+          <h2 id="wiringMissionTitle" class="text-xl font-black text-white">Misión 1: Punto de Luz Simple + Enchufe Schuko con Tierra</h2>
+          <p id="wiringMissionDesc" class="text-sm text-slate-300">1º Elige el color de cable normativo. 2º Toca un borne de origen y luego el borne de destino para tirar el cable. ¡Luego sube el PIA y prueba los botones!</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="loadWiringLevel(0)" id="lvlBtn0" class="px-3 py-2 rounded-xl text-xs font-extrabold bg-emerald-600 text-white shadow">1. Luz + Enchufe</button>
+          <button onclick="loadWiringLevel(1)" id="lvlBtn1" class="px-3 py-2 rounded-xl text-xs font-extrabold bg-slate-700 text-slate-200 hover:bg-slate-600">2. Conmutada (2 Puntos)</button>
+          <button onclick="loadWiringLevel(2)" id="lvlBtn2" class="px-3 py-2 rounded-xl text-xs font-extrabold bg-slate-700 text-slate-200 hover:bg-slate-600">3. Conmutada Cruce (3 Puntos)</button>
+          <button onclick="loadWiringLevel(3)" id="lvlBtn3" class="px-3 py-2 rounded-xl text-xs font-extrabold bg-slate-700 text-slate-200 hover:bg-slate-600">4. Minutero Escalera</button>
+        </div>
+      </div>
+
+      <!-- Barra de Herramientas de Cableado (Rollos de Cable REBT + Acciones) -->
+      <div class="bg-slate-900 border border-slate-700 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3">
+        
+        <!-- Selección de Color de Conductor REBT -->
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs font-extrabold text-slate-400 uppercase mr-1">🎨 Rollo de Cable:</span>
+          
+          <button onclick="selectWireColor('phase')" id="wireBtn-phase" class="wire-color-btn ring-2 ring-white bg-amber-800 hover:bg-amber-700 text-white text-xs font-extrabold px-3 py-2 rounded-xl flex items-center gap-2 transition">
+            <span class="w-3.5 h-3.5 rounded-full bg-[#b45309] border border-white inline-block"></span>
+            <span>Marrón (Fase L1)</span>
+          </button>
+
+          <button onclick="selectWireColor('bridge')" id="wireBtn-bridge" class="wire-color-btn bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-extrabold px-3 py-2 rounded-xl flex items-center gap-2 transition">
+            <span class="w-3.5 h-3.5 rounded-full bg-slate-400 border border-white inline-block"></span>
+            <span>Negro/Gris (Puentes / Vuelta)</span>
+          </button>
+
+          <button onclick="selectWireColor('neutral')" id="wireBtn-neutral" class="wire-color-btn bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-extrabold px-3 py-2 rounded-xl flex items-center gap-2 transition">
+            <span class="w-3.5 h-3.5 rounded-full bg-sky-500 border border-white inline-block"></span>
+            <span>Azul (Neutro N)</span>
+          </button>
+
+          <button onclick="selectWireColor('earth')" id="wireBtn-earth" class="wire-color-btn bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-extrabold px-3 py-2 rounded-xl flex items-center gap-2 transition">
+            <span class="w-3.5 h-3.5 rounded-full bg-gradient-to-r from-green-500 to-yellow-400 border border-white inline-block"></span>
+            <span>Verde-Amarillo (Tierra PE)</span>
+          </button>
+        </div>
+
+        <!-- Controles del Panel (Borrar último, Pista, Subir PIA) -->
+        <div class="flex items-center gap-2">
+          <button onclick="undoLastWire()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl transition">
+            ↩️ Deshacer Cable
+          </button>
+          <button onclick="clearAllWires()" class="bg-slate-800 hover:bg-red-950/60 border border-slate-600 text-rose-300 text-xs font-bold px-3 py-2 rounded-xl transition">
+            🗑️ Cortar Todo
+          </button>
+          <button onclick="showSolutionWires()" class="bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-400/40 text-indigo-200 text-xs font-bold px-3 py-2 rounded-xl transition">
+            👁️ Ver Esquema Guía
+          </button>
+          <button onclick="verifyAndTogglePower()" id="powerToggleBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition">
+            <span>⚡</span>
+            <span id="powerToggleBtnText">SUBIR PIA Y PROBAR</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mensaje de Estado / Diagnóstico del Inspector C.S.I. -->
+      <div id="wiringFeedbackBanner" class="bg-slate-900/90 border border-slate-700 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs md:text-sm">
+        <div class="flex items-center gap-2">
+          <span id="wiringFeedbackIcon" class="text-lg">🛠️</span>
+          <span id="wiringFeedbackText" class="font-semibold text-slate-200">Toca un borne circular para empezar a conectar un cable. Recuerda: ¡trabaja siempre con el PIA bajado (OFF)!</span>
+        </div>
+        <span id="wiresCountLabel" class="mono text-xs text-sky-400 font-bold whitespace-nowrap ml-2">0 cables conectados</span>
+      </div>
+
+      <!-- TABLERO DE MADERA / PANEL DE PRÁCTICAS INTERACTIVO (SVG GRANDE) -->
+      <div class="mech-card border-2 border-slate-700 rounded-2xl p-2 md:p-4 relative overflow-x-auto">
+        <svg id="workbenchSvg" viewBox="0 0 1000 540" class="w-full min-w-[780px] h-auto bg-[#0b1324] rounded-xl border border-slate-800">
+          <!-- El contenido del banco de trabajo se dibuja dinámicamente en JS -->
+        </svg>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         ESTACIÓN 4: RETO DE PLANO DE PLANTA Y UNIFILARES (PÁGS. 4, 5 Y 6 UT3)
+         ===================================================================== -->
+    <section id="station4" class="hidden space-y-4">
+      <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <span class="text-xs font-extrabold uppercase tracking-wider text-purple-400">Estación 4 · Plano Arquitectónico Unifilar (Págs. 4-6 UT3)</span>
+          <h2 class="text-xl font-black text-white">Completa el Plano en Planta de la Habitación Conmutada</h2>
+          <p class="text-sm text-slate-300">Un cliente quiere encender la luz del dormitorio desde <strong>3 puntos distintos</strong> (la puerta y las dos mesillas de noche), además de tener un enchufe con tierra. ¡Selecciona el símbolo unifilar abajo y toca las casillas del plano!</p>
+        </div>
+        <button onclick="resetFloorPlan()" class="bg-slate-700 hover:bg-slate-600 text-xs font-bold px-3.5 py-2 rounded-xl transition">
+          🔄 Reiniciar Plano
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <!-- Paleta de símbolos unifilares recortables -->
+        <div class="lg:col-span-4 mech-card border border-slate-700 rounded-2xl p-4 space-y-3">
+          <div class="text-xs font-extrabold uppercase text-amber-400">1º Selecciona un Símbolo Unifilar:</div>
+          <div id="planSymbolsPalette" class="grid grid-cols-2 gap-2.5">
+            <!-- Botones con símbolos unifilares -->
+          </div>
+          <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-3 text-xs text-slate-300 space-y-1.5">
+            <div class="font-bold text-sky-400">📌 Pista del Tema 3 (Pág. 14):</div>
+            <p>Para encender desde 3 puntos diferentes necesitamos siempre <strong>2 conmutadores simples</strong> en los extremos y <strong>1 conmutador de cruzamiento</strong> en el centro.</p>
+          </div>
+        </div>
+
+        <!-- Plano arquitectónico interactivo -->
+        <div class="lg:col-span-8 mech-card border border-slate-700 rounded-2xl p-4 flex flex-col items-center">
+          <div class="w-full flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-slate-400 uppercase">2º Toca las casillas [1] a [6] en el plano para colocar el símbolo seleccionado:</span>
+            <span id="planScoreStatus" class="text-xs font-extrabold text-emerald-400">0 / 6 ubicados</span>
+          </div>
+
+          <svg id="floorPlanSvg" viewBox="0 0 700 420" class="w-full h-auto bg-slate-950 rounded-xl border border-slate-800">
+            <!-- Dibujo de muros, cama, puerta y huecos 1 al 6 -->
+          </svg>
+
+          <div id="floorPlanFeedback" class="mt-3 w-full text-center text-xs md:text-sm font-bold bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-300">
+            Selecciona un símbolo de la columna izquierda y toca un recuadro numerado en el plano.
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL DE EXPORTACIÓN A CANVA -->
+  <div id="canvaModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🎨</span>
+          <h3 class="text-lg font-black text-white">Publicar este Juego Interactivo en tu Canva Premium</h3>
+        </div>
+        <button onclick="closeCanvaModal()" class="text-slate-400 hover:text-white text-xl font-bold">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs md:text-sm text-slate-300">
+        <p>Puedes llevar este laboratorio interactivo a tu cuenta de <strong>Canva Educación / Pro</strong> de dos formas:</p>
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2">
+          <div class="font-bold text-purple-400">Opción A: Pegar el código directo en Canva Code (Recomendado)</div>
+          <ol class="list-decimal list-inside space-y-1 text-xs text-slate-300">
+            <li>Pulsa el botón <strong>"Copiar Código HTML Completo"</strong> de aquí abajo.</li>
+            <li>En Canva, abre un diseño o Web, ve a <strong>Apps → Canva Code (o IA Generativa de Código)</strong> y pega el código o súbelo.</li>
+            <li>Publícalo como sitio web (<code>.my.canva.site</code>) y comparte el enlace en Google Classroom.</li>
+          </ol>
+        </div>
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2">
+          <div class="font-bold text-sky-400">Opción B: Copiar el Prompt Maestro para la IA de Canva</div>
+          <p class="text-xs">Si prefieres que la propia IA de Canva genere variantes adicionales sin gastar tokens aquí, copia este prompt optimizado:</p>
+          <textarea id="canvaPromptTextarea" readonly class="w-full h-24 bg-slate-900 border border-slate-700 rounded-lg p-2 text-[11px] mono text-slate-200">Crea una aplicación educativa interactiva en español para FP Básica de Electricidad (Tema 3: Simbología y Esquemas Eléctricos). Incluye: 1) Un visor interactivo de mecanismos eléctricos (interruptor, conmutador simple de 3 bornes, conmutador de cruce de 4 bornes, pulsador, enchufe Schuko y minutero de escalera) que muestre su vista trasera con bornes, su símbolo unifilar y multifilar, y cambie de posición al pulsarlo. 2) Un juego de ordenar las 4 piezas de un mecanismo empotrado (bastidor, mecanismo, marco y tecla). 3) Un simulador donde el alumno une con cables de colores REBT (marrón fase, azul neutro, negro/gris puentes, verde-amarillo tierra) una conmutada desde 2 y 3 puntos y comprueba cómo se enciende la lámpara.</textarea>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-end gap-2 pt-2">
+        <button onclick="copyCanvaPrompt()" id="copyPromptBtn" class="bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition">
+          📋 Copiar Prompt para IA de Canva
+        </button>
+        <button onclick="copyFullHtmlCode()" id="copyHtmlBtn" class="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition">
+          💻 Copiar Código HTML Completo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // ESTADO GLOBAL DE LA APLICACIÓN Y PUNTUACIÓN
+    // =========================================================================
+    let totalScore = 0;
+    let completedMissions = new Set();
+    let exploredMechs = new Set([0]);
+    let currentMechIndex = 0;
+    let inspectorActuated = false;
+
+    function addScore(points, missionId = null) {
+      totalScore += points;
+      document.getElementById('scoreDisplay').textContent = `${totalScore} CR`;
+      if (missionId && !completedMissions.has(missionId)) {
+        completedMissions.add(missionId);
+        document.getElementById('badgeCounter').textContent = `${completedMissions.size} / 4 ⭐`;
+      }
+    }
+
+    function switchTab(tabNum) {
+      for (let i = 1; i <= 4; i++) {
+        const sec = document.getElementById(`station${i}`);
+        const btn = document.getElementById(`tabBtn${i}`);
+        if (i === tabNum) {
+          sec.classList.remove('hidden');
+          btn.className = "tab-btn px-4 py-2 rounded-lg font-bold text-xs md:text-sm flex items-center gap-2 transition whitespace-nowrap bg-sky-600 text-white shadow-md";
+        } else {
+          sec.classList.add('hidden');
+          btn.className = "tab-btn px-4 py-2 rounded-lg font-bold text-xs md:text-sm flex items-center gap-2 transition whitespace-nowrap bg-slate-800 text-slate-300 hover:bg-slate-700";
+        }
+      }
+    }
+
+    // =========================================================================
+    // ESTACIÓN 1: DATOS DE LOS 6 MECANISMOS REALES (UT3)
+    // =========================================================================
+    const mechanismsData = [
+      {
+        id: 0,
+        shortName: "Interruptor Simple",
+        category: "Mecanismo de Maniobra (Pág. 10 UT3)",
+        title: "Interruptor Simple (Unipolar)",
+        bottomNote: "Vista trasera real (tipo Niessen/Simon): Aunque veas 4 agujeros arriba y 4 abajo, están unidos de dos en dos internamente. Solo tiene <strong>2 contactos reales</strong>: Entrada de Fase (marcado con <strong>L</strong> con palanca roja/blanca) y Salida hacia la lámpara.",
+        rules: [
+          "Solo interrumpe un conductor: SIEMPRE la Fase (marrón).",
+          "El cable Neutro (azul) NUNCA entra en un interruptor simple; va directo a la lámpara.",
+          "Presenta 2 posiciones fijas permanentes: Abierto (no pasa corriente) o Cerrado (pasa corriente)."
+        ],
+        quizQ: "¿Qué ocurre si conectas por error Fase y Neutro a los dos bornes de un interruptor simple y lo pulsas?",
+        quizOpts: [
+          { text: "La bombilla brilla el doble", ok: false },
+          { text: "¡Cortocircuito directo al cerrarlo!", ok: true }
+        ],
+        renderBackSvg: (actuated) => `
+          <svg viewBox="0 0 200 200" class="w-full h-full">
+            <!-- Marco soporte plástico trasero -->
+            <rect x="25" y="15" width="150" height="170" rx="14" fill="#cbd5e1" stroke="#64748b" stroke-width="3"/>
+            <!-- Cuerpo trasero moldeado gris claro -->
+            <path d="M50 30 H150 L155 170 H45 Z" fill="#e2e8f0" stroke="#475569" stroke-width="2.5"/>
+            <!-- Mordazas metálicas laterales -->
+            <rect x="32" y="75" width="14" height="50" rx="3" fill="#94a3b8" stroke="#334155" stroke-width="2"/>
+            <rect x="154" y="75" width="14" height="50" rx="3" fill="#94a3b8" stroke="#334155" stroke-width="2"/>
+            <!-- 4 agujeros superiores pero solo 1 activo con marca L -->
+            <circle cx="68" cy="52" r="9" fill="#1e293b" stroke="#475569" stroke-width="2" onclick="showTerminalTip('Agujero ciego o gemelo interno.')"/>
+            <circle cx="90" cy="52" r="9" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+            <line x1="101" y1="38" x2="101" y2="66" stroke="#475569" stroke-width="2.5"/>
+            <!-- Borne L Fase -->
+            <circle cx="114" cy="52" r="10" fill="#0f172a" stroke="#dc2626" stroke-width="3" class="cursor-pointer" onclick="showTerminalTip('BORNE L (Común): Aquí entra siempre el cable Marrón de Fase.')"/>
+            <circle cx="136" cy="52" r="10" fill="#0f172a" stroke="#dc2626" stroke-width="3" class="cursor-pointer" onclick="showTerminalTip('Agujero gemelo del borne L (sirve para puentear fase a otro interruptor).')"/>
+            <rect x="115" y="70" width="22" height="24" rx="2" fill="#ffffff" stroke="#94a3b8"/>
+            <text x="126" y="87" text-anchor="middle" font-size="16" font-weight="900" fill="#0f172a">L</text>
+            <!-- Bornes inferiores (Salida vuelta lámpara) -->
+            <circle cx="68" cy="145" r="10" fill="#0f172a" stroke="#2563eb" stroke-width="3" class="cursor-pointer" onclick="showTerminalTip('BORNE SALIDA (Vuelta): De aquí sale el cable Negro/Gris hacia la bombilla.')"/>
+            <circle cx="90" cy="145" r="10" fill="#0f172a" stroke="#2563eb" stroke-width="3" class="cursor-pointer" onclick="showTerminalTip('Borne gemelo de salida hacia la lámpara.')"/>
+            <line x1="101" y1="130" x2="101" y2="160" stroke="#475569" stroke-width="2.5"/>
+            <!-- Parte inferior derecha maciza (como la foto real del examen) -->
+            <rect x="108" y="122" width="38" height="42" rx="4" fill="#94a3b8" stroke="#64748b"/>
+            <text x="100" y="112" text-anchor="middle" font-size="10" font-weight="bold" fill="#334155">10AX 250V~</text>
+          </svg>
+        `,
+        renderXraySvg: (actuated) => `
+          <svg viewBox="0 0 200 180" class="w-full h-full">
+            <text x="100" y="20" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="bold">${actuated ? 'POSICIÓN: CERRADO (ON)' : 'POSICIÓN: ABIERTO (OFF)'}</text>
+            <!-- Cable Fase L1 -->
+            <line x1="20" y1="90" x2="70" y2="90" stroke="#b45309" stroke-width="6" stroke-linecap="round"/>
+            <text x="35" y="78" fill="#f59e0b" font-size="12" font-weight="bold">Fase (L)</text>
+            <!-- Contacto móvil -->
+            <line x1="70" y1="90" x2="${actuated ? '130' : '122'}" y2="${actuated ? '90' : '52'}" stroke="${actuated ? '#facc15' : '#cbd5e1'}" stroke-width="6" stroke-linecap="round"/>
+            <!-- Cable Salida a Lámpara -->
+            <line x1="130" y1="90" x2="180" y2="90" stroke="${actuated ? '#facc15' : '#64748b'}" stroke-width="6" stroke-linecap="round" class="${actuated ? 'current-flow' : ''}"/>
+            <circle cx="70" cy="90" r="7" fill="#f59e0b" stroke="#fff" stroke-width="2"/>
+            <circle cx="130" cy="90" r="7" fill="${actuated ? '#facc15' : '#64748b'}" stroke="#fff" stroke-width="2"/>
+            <text x="155" y="115" text-anchor="middle" fill="#cbd5e1" font-size="11" font-weight="bold">A Lámpara</text>
+          </svg>
+        `,
+        symMulti: `<svg viewBox="0 0 120 80" class="w-28 h-20"><line x1="60" y1="10" x2="60" y2="28" stroke="#0f172a" stroke-width="3"/><circle cx="60" cy="28" r="3.5" fill="none" stroke="#0f172a" stroke-width="2.5"/><line x1="60" y1="54" x2="42" y2="30" stroke="#0f172a" stroke-width="3"/><line x1="60" y1="54" x2="60" y2="72" stroke="#0f172a" stroke-width="3"/></svg>`,
+        symUni: `<svg viewBox="0 0 120 80" class="w-28 h-20"><circle cx="52" cy="48" r="11" fill="none" stroke="#0f172a" stroke-width="3"/><line x1="59" y1="39" x2="75" y2="18" stroke="#0f172a" stroke-width="3"/><line x1="75" y1="18" x2="84" y2="23" stroke="#0f172a" stroke-width="3"/></svg>`
+      },
+      {
+        id: 1,
+        shortName: "Conmutador Simple",
+        category: "Mando desde 2 puntos (Pág. 12 UT3)",
+        title: "Conmutador Simple (3 Bornes)",
+        bottomNote: "Consta de <strong>1 borne común (puente L)</strong> arriba y <strong>2 bornes de salida (1 y 2)</strong> abajo. Nunca corta del todo: desvía la corriente por el camino izquierdo o por el camino derecho como el cambio de agujas de un tren.",
+        rules: [
+          "Se usan en parejas para encender y apagar una luz desde 2 sitios diferentes (ej. puerta y cabecero).",
+          "Al borne común (L) del primer conmutador llega la Fase (marrón). Del común del segundo sale la vuelta a la lámpara.",
+          "Los dos bornes de salida de ambos conmutadores se unen entre sí con 2 cables puente (negro/gris)."
+        ],
+        quizQ: "¿Cuántos bornes de conexión eléctrica distintos tiene un conmutador simple?",
+        quizOpts: [
+          { text: "3 bornes (1 común y 2 salidas)", ok: true },
+          { text: "2 bornes igual que el interruptor", ok: false }
+        ],
+        renderBackSvg: (actuated) => `
+          <svg viewBox="0 0 200 200" class="w-full h-full">
+            <rect x="25" y="15" width="150" height="170" rx="14" fill="#cbd5e1" stroke="#64748b" stroke-width="3"/>
+            <path d="M50 30 H150 L155 170 H45 Z" fill="#e2e8f0" stroke="#475569" stroke-width="2.5"/>
+            <!-- Borne Común Superior L -->
+            <circle cx="114" cy="52" r="10" fill="#0f172a" stroke="#dc2626" stroke-width="3" class="cursor-pointer" onclick="showTerminalTip('BORNE COMÚN (L / Puente): Entrada de Fase (en S1) o salida a lámpara (en S2).')"/>
+            <circle cx="136" cy="52" r="10" fill="#0f172a" stroke="#dc2626" stroke-width="3" class="cursor-pointer" onclick="showTerminalTip('Agujero doble del borne común L.')"/>
+            <rect x="115" y="68" width="22" height="22" rx="2" fill="#ffffff" stroke="#94a3b8"/>
+            <text x="126" y="84" text-anchor="middle" font-size="15" font-weight="900" fill="#dc2626">L</text>
+            <!-- Dos salidas inferiores separadas (Bornes 1 y 2) -->
+            <circle cx="66" cy="145" r="10" fill="#0f172a" stroke="#0284c7" stroke-width="3" class="cursor-pointer" onclick="showTerminalTip('SALIDA 1 (Puente A): Se une mediante cable gris/negro con el otro conmutador.')"/>
+            <circle cx="88" cy="145" r="10" fill="#0f172a" stroke="#0284c7" stroke-width="3"/>
+            <line x1="100" y1="128" x2="100" y2="162" stroke="#334155" stroke-width="3"/>
+            <circle cx="114" cy="145" r="10" fill="#0f172a" stroke="#0284c7" stroke-width="3" class="cursor-pointer" onclick="showTerminalTip('SALIDA 2 (Puente B): Segundo hilo viajero hacia el otro conmutador.')"/>
+            <circle cx="136" cy="145" r="10" fill="#0f172a" stroke="#0284c7" stroke-width="3"/>
+            <text x="76" y="128" text-anchor="middle" font-size="11" font-weight="900" fill="#0f172a">1</text>
+            <text x="126" y="128" text-anchor="middle" font-size="11" font-weight="900" fill="#0f172a">2</text>
+          </svg>
+        `,
+        renderXraySvg: (actuated) => `
+          <svg viewBox="0 0 200 180" class="w-full h-full">
+            <text x="100" y="20" text-anchor="middle" fill="#38bdf8" font-size="11" font-weight="bold">${actuated ? 'POSICIÓN B: Conecta C con 2' : 'POSICIÓN A: Conecta C con 1'}</text>
+            <!-- Entrada Común C -->
+            <line x1="100" y1="35" x2="100" y2="68" stroke="#b45309" stroke-width="6"/>
+            <text x="100" y="32" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="bold">Común (L)</text>
+            <!-- Palanca móvil -->
+            <line x1="100" y1="68" x2="${actuated ? '135' : '65'}" y2="122" stroke="#facc15" stroke-width="6" stroke-linecap="round"/>
+            <!-- Salida 1 y Salida 2 -->
+            <line x1="65" y1="122" x2="65" y2="160" stroke="${!actuated ? '#facc15' : '#475569'}" stroke-width="5" class="${!actuated ? 'current-flow' : ''}"/>
+            <line x1="135" y1="122" x2="135" y2="160" stroke="${actuated ? '#facc15' : '#475569'}" stroke-width="5" class="${actuated ? 'current-flow' : ''}"/>
+            <circle cx="100" cy="68" r="6" fill="#f59e0b" stroke="#fff" stroke-width="2"/>
+            <circle cx="65" cy="122" r="6" fill="${!actuated ? '#facc15' : '#475569'}" stroke="#fff" stroke-width="2"/>
+            <circle cx="135" cy="122" r="6" fill="${actuated ? '#facc15' : '#475569'}" stroke="#fff" stroke-width="2"/>
+            <text x="65" y="174" text-anchor="middle" fill="#cbd5e1" font-size="11" font-weight="bold">Puente 1</text>
+            <text x="135" y="174" text-anchor="middle" fill="#cbd5e1" font-size="11" font-weight="bold">Puente 2</text>
+          </svg>
+        `,
+        symMulti: `<svg viewBox="0 0 120 80" class="w-28 h-20"><line x1="60" y1="8" x2="60" y2="25" stroke="#0f172a" stroke-width="3"/><line x1="60" y1="25" x2="45" y2="52" stroke="#0f172a" stroke-width="3"/><circle cx="45" cy="52" r="3" fill="#0f172a"/><circle cx="75" cy="52" r="3" fill="#0f172a"/><line x1="45" y1="52" x2="45" y2="72" stroke="#0f172a" stroke-width="3"/><line x1="75" y1="52" x2="75" y2="72" stroke="#0f172a" stroke-width="3"/></svg>`,
+        symUni: `<svg viewBox="0 0 120 80" class="w-28 h-20"><circle cx="60" cy="40" r="11" fill="none" stroke="#0f172a" stroke-width="3"/><line x1="67" y1="31" x2="82" y2="12" stroke="#0f172a" stroke-width="3"/><line x1="82" y1="12" x2="90" y2="17" stroke="#0f172a" stroke-width="3"/><line x1="53" y1="49" x2="38" y2="68" stroke="#0f172a" stroke-width="3"/><line x1="38" y1="68" x2="30" y2="63" stroke="#0f172a" stroke-width="3"/></svg>`
+      },
+      {
+        id: 2,
+        shortName: "Conmutador Cruce",
+        category: "Mando 3 o más puntos (Pág. 13 UT3)",
+        title: "Conmutador de Cruce (4 Bornes)",
+        bottomNote: "Fíjate en la foto real del examen: tiene los <strong>4 bloques de agujeros completamente ocupados</strong> (2 entradas arriba y 2 salidas abajo). Su misión es cruzar en X o poner en paralelo (=) los cables que vienen de los dos conmutadores de los extremos.",
+        rules: [
+          "Siempre va instalado EN EL CENTRO entre dos conmutadores simples.",
+          "Tiene 4 bornes: 2 de entrada (vienen del primer conmutador) y 2 de salida (van al último conmutador).",
+          "Si queremos encender desde 4 puntos, pondremos 2 conmutadores simples en los extremos y 2 de cruce en medio."
+        ],
+        quizQ: "Para encender una lámpara desde 4 sitios distintos, ¿cuántos conmutadores de cruce necesitas?",
+        quizOpts: [
+          { text: "2 simples y 2 de cruce", ok: true },
+          { text: "4 de cruce", ok: false }
+        ],
+        renderBackSvg: (actuated) => `
+          <svg viewBox="0 0 200 200" class="w-full h-full">
+            <rect x="25" y="15" width="150" height="170" rx="14" fill="#cbd5e1" stroke="#64748b" stroke-width="3"/>
+            <path d="M50 30 H150 L155 170 H45 Z" fill="#93c5fd" fill-opacity="0.35" stroke="#475569" stroke-width="2.5"/>
+            <!-- 4 Bornes Reales activos (2 arriba, 2 abajo) como la foto azulada del examen -->
+            <circle cx="66" cy="52" r="10" fill="#0f172a" stroke="#f59e0b" stroke-width="3" class="cursor-pointer" onclick="showTerminalTip('ENTRADA 1: Recibe el puente 1 desde el primer conmutador simple.')"/>
+            <circle cx="88" cy="52" r="10" fill="#0f172a" stroke="#f59e0b" stroke-width="3"/>
+            <line x1="100" y1="36" x2="100" y2="68" stroke="#334155" stroke-width="3"/>
+            <circle cx="114" cy="52" r="10" fill="#0f172a" stroke="#f59e0b" stroke-width="3" class="cursor-pointer" onclick="showTerminalTip('ENTRADA 2: Recibe el puente 2 desde el primer conmutador simple.')"/>
+            <circle cx="136" cy="52" r="10" fill="#0f172a" stroke="#f59e0b" stroke-width="3"/>
+
+            <!-- Abajo -->
+            <circle cx="66" cy="145" r="10" fill="#0f172a" stroke="#0284c7" stroke-width="3" class="cursor-pointer" onclick="showTerminalTip('SALIDA 3: Sale hacia el segundo conmutador simple.')"/>
+            <circle cx="88" cy="145" r="10" fill="#0f172a" stroke="#0284c7" stroke-width="3"/>
+            <line x1="100" y1="128" x2="100" y2="162" stroke="#334155" stroke-width="3"/>
+            <circle cx="114" cy="145" r="10" fill="#0f172a" stroke="#0284c7" stroke-width="3" class="cursor-pointer" onclick="showTerminalTip('SALIDA 4: Sale hacia el segundo conmutador simple.')"/>
+            <circle cx="136" cy="145" r="10" fill="#0f172a" stroke="#0284c7" stroke-width="3"/>
+            <text x="100" y="103" text-anchor="middle" font-size="11" font-weight="900" fill="#1e293b">CRUZAMIENTO (4 BORNES)</text>
+          </svg>
+        `,
+        renderXraySvg: (actuated) => `
+          <svg viewBox="0 0 200 180" class="w-full h-full">
+            <text x="100" y="20" text-anchor="middle" fill="#a855f7" font-size="11" font-weight="bold">${actuated ? 'POSICIÓN B: VÍAS CRUZADAS (X)' : 'POSICIÓN A: VÍAS DIRECTAS (||)'}</text>
+            <!-- Entradas 1 y 2 -->
+            <circle cx="65" cy="50" r="7" fill="#f59e0b" stroke="#fff" stroke-width="2"/>
+            <circle cx="135" cy="50" r="7" fill="#38bdf8" stroke="#fff" stroke-width="2"/>
+            <!-- Salidas 3 y 4 -->
+            <circle cx="65" cy="135" r="7" fill="#f59e0b" stroke="#fff" stroke-width="2"/>
+            <circle cx="135" cy="135" r="7" fill="#38bdf8" stroke="#fff" stroke-width="2"/>
+            ${!actuated ? `
+              <line x1="65" y1="50" x2="65" y2="135" stroke="#facc15" stroke-width="6" class="current-flow"/>
+              <line x1="135" y1="50" x2="135" y2="135" stroke="#64748b" stroke-width="5" stroke-dasharray="5 5"/>
+            ` : `
+              <line x1="65" y1="50" x2="135" y2="135" stroke="#facc15" stroke-width="6" class="current-flow"/>
+              <line x1="135" y1="50" x2="65" y2="135" stroke="#64748b" stroke-width="5" stroke-dasharray="5 5"/>
+            `}
+            <text x="65" y="36" text-anchor="middle" fill="#cbd5e1" font-size="11" font-weight="bold">Ent. 1</text>
+            <text x="135" y="36" text-anchor="middle" fill="#cbd5e1" font-size="11" font-weight="bold">Ent. 2</text>
+            <text x="65" y="158" text-anchor="middle" fill="#cbd5e1" font-size="11" font-weight="bold">Sal. 3</text>
+            <text x="135" y="158" text-anchor="middle" fill="#cbd5e1" font-size="11" font-weight="bold">Sal. 4</text>
+          </svg>
+        `,
+        symMulti: `<svg viewBox="0 0 120 80" class="w-28 h-20"><rect x="35" y="18" width="50" height="44" fill="none" stroke="#0f172a" stroke-width="2"/><line x1="45" y1="18" x2="75" y2="62" stroke="#0f172a" stroke-width="2.5"/><line x1="75" y1="18" x2="45" y2="62" stroke="#0f172a" stroke-width="2.5"/><circle cx="45" cy="18" r="3" fill="#0f172a"/><circle cx="75" cy="18" r="3" fill="#0f172a"/><circle cx="45" cy="62" r="3" fill="#0f172a"/><circle cx="75" cy="62" r="3" fill="#0f172a"/></svg>`,
+        symUni: `<svg viewBox="0 0 120 80" class="w-28 h-20"><circle cx="60" cy="40" r="11" fill="none" stroke="#0f172a" stroke-width="3"/><line x1="68" y1="32" x2="84" y2="14" stroke="#0f172a" stroke-width="3"/><line x1="52" y1="48" x2="36" y2="66" stroke="#0f172a" stroke-width="3"/><line x1="52" y1="32" x2="36" y2="14" stroke="#0f172a" stroke-width="3"/><line x1="68" y1="48" x2="84" y2="66" stroke="#0f172a" stroke-width="3"/></svg>`
+      },
+      {
+        id: 3,
+        shortName: "Pulsador (Timbre)",
+        category: "Mando por Impulso (Pág. 15 UT3)",
+        title: "Pulsador Normalmente Abierto (NA)",
+        bottomNote: "Por fuera y por detrás se parece a un interruptor simple (2 bornes), pero lleva un <strong>muelle interno</strong>: solo cierra el circuito mientras mantienes el dedo apretado. Al soltarlo, vuelve solo al reposo.",
+        rules: [
+          "Se utiliza para accionar timbres, zumbadores, telerruptores y automáticos de escalera (minuteros).",
+          "Si queremos activar un timbre desde 2 puertas distintas, los pulsadores se conectan EN PARALELO."
+        ],
+        quizQ: "¿Qué diferencia mecánica tiene un pulsador frente a un interruptor normal?",
+        quizOpts: [
+          { text: "Lleva un muelle que lo devuelve al reposo al soltar", ok: true },
+          { text: "Necesita 4 cables obligatorios", ok: false }
+        ],
+        renderBackSvg: (actuated) => `
+          <svg viewBox="0 0 200 200" class="w-full h-full">
+            <rect x="25" y="15" width="150" height="170" rx="14" fill="#cbd5e1" stroke="#64748b" stroke-width="3"/>
+            <path d="M50 30 H150 L155 170 H45 Z" fill="#e2e8f0" stroke="#475569" stroke-width="2.5"/>
+            <circle cx="114" cy="52" r="10" fill="#0f172a" stroke="#dc2626" stroke-width="3" class="cursor-pointer" onclick="showTerminalTip('ENTRADA L: Recibe el cable Marrón de Fase.')"/>
+            <circle cx="68" cy="145" r="10" fill="#0f172a" stroke="#2563eb" stroke-width="3" class="cursor-pointer" onclick="showTerminalTip('SALIDA IMPULSO: Envía corriente al timbre o al minutero mientras se pulsa.')"/>
+            <!-- Icono muelle grabado -->
+            <path d="M85 95 L95 85 L105 105 L115 85 L125 95" fill="none" stroke="#dc2626" stroke-width="3"/>
+            <text x="100" y="120" text-anchor="middle" font-size="11" font-weight="900" fill="#0f172a">PULSADOR (MUELLE)</text>
+          </svg>
+        `,
+        renderXraySvg: (actuated) => `
+          <svg viewBox="0 0 200 180" class="w-full h-full">
+            <text x="100" y="20" text-anchor="middle" fill="#facc15" font-size="11" font-weight="bold">${actuated ? '¡PULSANDO! (Suena Timbre 🔔)' : 'EN REPOSO (Muelle abierto)'}</text>
+            <!-- Muelle empujador -->
+            <line x1="100" y1="32" x2="100" y2="${actuated ? '85' : '62'}" stroke="#94a3b8" stroke-width="4" stroke-dasharray="4 3"/>
+            <polygon points="85,${actuated ? '55' : '35'} 115,${actuated ? '55' : '35'} 115,${actuated ? '65' : '45'} 85,${actuated ? '65' : '45'}" fill="#ef4444"/>
+            <line x1="25" y1="100" x2="70" y2="100" stroke="#b45309" stroke-width="6"/>
+            <line x1="70" y1="100" x2="130" y2="${actuated ? '100' : '68'}" stroke="${actuated ? '#facc15' : '#cbd5e1'}" stroke-width="6"/>
+            <line x1="130" y1="100" x2="175" y2="100" stroke="${actuated ? '#facc15' : '#64748b'}" stroke-width="6" class="${actuated ? 'current-flow' : ''}"/>
+            <circle cx="70" cy="100" r="6" fill="#f59e0b"/>
+            <circle cx="130" cy="100" r="6" fill="#38bdf8"/>
+          </svg>
+        `,
+        symMulti: `<svg viewBox="0 0 120 80" class="w-28 h-20"><line x1="65" y1="10" x2="65" y2="28" stroke="#0f172a" stroke-width="3"/><line x1="65" y1="54" x2="46" y2="30" stroke="#0f172a" stroke-width="3"/><line x1="65" y1="54" x2="65" y2="72" stroke="#0f172a" stroke-width="3"/><line x1="30" y1="42" x2="55" y2="42" stroke="#0f172a" stroke-width="2" stroke-dasharray="3 2"/><path d="M30 35 V49 M24 38 H30 M24 46 H30" stroke="#0f172a" stroke-width="2" fill="none"/></svg>`,
+        symUni: `<svg viewBox="0 0 120 80" class="w-28 h-20"><circle cx="60" cy="40" r="14" fill="none" stroke="#0f172a" stroke-width="3"/><circle cx="60" cy="40" r="6" fill="none" stroke="#0f172a" stroke-width="2.5"/></svg>`
+      },
+      {
+        id: 4,
+        shortName: "Enchufe Schuko 16A",
+        category: "Toma de Corriente 2P+T (Pág. 16 UT3)",
+        title: "Base de Enchufe Schuko (16A 2P+T)",
+        bottomNote: "Dispone de <strong>3 bornes obligatorios</strong>: Fase (L), Neutro (N) y en el centro el borne conectado a las <strong>patillas metálicas laterales de Toma de Tierra (PE)</strong> que protegen contra contactos indirectos.",
+        rules: [
+          "Se alimenta con cable de sección 2,5 mm² protegido por un magnetotérmico (PIA) de 16A.",
+          "El cable bicolor Verde-Amarillo (PE) va SIEMPRE al tornillo central unido al fleje metálico de tierra.",
+          "Las tomas de 25A (horno y vitrocerámica) son más grandes y usan cable de 6 mm²."
+        ],
+        quizQ: "¿Para qué sirven las patillas metálicas laterales que asoman en una base Schuko?",
+        quizOpts: [
+          { text: "Unen la carcasa del aparato a la Toma de Tierra (PE)", ok: true },
+          { text: "Sujetan el enchufe para que no se caiga", ok: false }
+        ],
+        renderBackSvg: (actuated) => `
+          <svg viewBox="0 0 200 200" class="w-full h-full">
+            <rect x="25" y="20" width="150" height="160" rx="16" fill="#e2e8f0" stroke="#64748b" stroke-width="3"/>
+            <circle cx="100" cy="100" r="56" fill="#f8fafc" stroke="#94a3b8" stroke-width="3"/>
+            <!-- Fleje metálico de tierra arriba y abajo -->
+            <path d="M94 44 H106 V156 H94 Z" fill="#eab308" fill-opacity="0.3" stroke="#ca8a04" stroke-width="2"/>
+            <!-- Alveolos Fase y Neutro -->
+            <circle cx="68" cy="100" r="11" fill="#0f172a" stroke="#b45309" stroke-width="3.5" class="cursor-pointer" onclick="showTerminalTip('BORNE FASE (L): Conectar cable Marrón de 2,5 mm².')"/>
+            <circle cx="132" cy="100" r="11" fill="#0f172a" stroke="#0284c7" stroke-width="3.5" class="cursor-pointer" onclick="showTerminalTip('BORNE NEUTRO (N): Conectar cable Azul de 2,5 mm².')"/>
+            <!-- Borne central Tierra PE -->
+            <circle cx="100" cy="100" r="11" fill="#15803d" stroke="#facc15" stroke-width="3.5" class="cursor-pointer" onclick="showTerminalTip('BORNE TIERRA (PE ⏚): Conectar cable Verde-Amarillo.')"/>
+            <text x="68" y="82" text-anchor="middle" font-size="13" font-weight="900" fill="#b45309">L</text>
+            <text x="132" y="82" text-anchor="middle" font-size="13" font-weight="900" fill="#0284c7">N</text>
+            <text x="100" y="76" text-anchor="middle" font-size="12" font-weight="900" fill="#15803d">PE ⏚</text>
+          </svg>
+        `,
+        renderXraySvg: (actuated) => `
+          <svg viewBox="0 0 200 180" class="w-full h-full">
+            <text x="100" y="20" text-anchor="middle" fill="#10b981" font-size="11" font-weight="bold">CONEXIÓN REGLAMENTARIA 230V</text>
+            <line x1="55" y1="35" x2="55" y2="115" stroke="#b45309" stroke-width="6"/>
+            <line x1="100" y1="35" x2="100" y2="135" stroke="#22c55e" stroke-width="6" stroke-dasharray="6 4"/>
+            <line x1="145" y1="35" x2="145" y2="115" stroke="#0284c7" stroke-width="6"/>
+            <circle cx="55" cy="115" r="8" fill="#b45309" stroke="#fff" stroke-width="2"/>
+            <circle cx="100" cy="135" r="8" fill="#eab308" stroke="#15803d" stroke-width="3"/>
+            <circle cx="145" cy="115" r="8" fill="#0284c7" stroke="#fff" stroke-width="2"/>
+            <text x="55" y="145" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="bold">Fase</text>
+            <text x="100" y="162" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="bold">Tierra PE</text>
+            <text x="145" y="145" text-anchor="middle" fill="#38bdf8" font-size="11" font-weight="bold">Neutro</text>
+          </svg>
+        `,
+        symMulti: `<svg viewBox="0 0 120 80" class="w-28 h-20"><circle cx="60" cy="40" r="18" fill="none" stroke="#0f172a" stroke-width="2.5"/><circle cx="51" cy="40" r="3" fill="none" stroke="#0f172a" stroke-width="2"/><circle cx="69" cy="40" r="3" fill="none" stroke="#0f172a" stroke-width="2"/><circle cx="60" cy="49" r="3" fill="#0f172a"/></svg>`,
+        symUni: `<svg viewBox="0 0 120 80" class="w-28 h-20"><path d="M42 28 A18 18 0 0 0 78 28" fill="none" stroke="#0f172a" stroke-width="3"/><line x1="60" y1="46" x2="60" y2="68" stroke="#0f172a" stroke-width="3"/><line x1="48" y1="46" x2="72" y2="46" stroke="#0f172a" stroke-width="3"/></svg>`
+      },
+      {
+        id: 5,
+        shortName: "Minutero Escalera",
+        category: "Automatismo Temporal (Pág. 24 UT3)",
+        title: "Automático de Escalera / Minutero (T20 / EPN)",
+        bottomNote: "Como el Hager o el Orbis T20 de tus apuntes (Pág. 24). Se monta en el carril DIN del cuadro y mantiene las luces encendidas entre 45 seg y 7 min tras tocar un pulsador.",
+        rules: [
+          "Recibe alimentación permanente de Fase (L / borne 1) y Neutro (N / borne 2).",
+          "El borne 3 recibe el impulso de los pulsadores de planta.",
+          "El borne 4 (con símbolo de bombilla ⊗) envía la corriente temporizada a todas las lámparas."
+        ],
+        quizQ: "En un minutero de escalera, ¿qué elemento instalamos en los pasillos para que los vecinos enciendan la luz?",
+        quizOpts: [
+          { text: "Pulsadores en paralelo", ok: true },
+          { text: "Conmutadores de cruce", ok: false }
+        ],
+        renderBackSvg: (actuated) => `
+          <svg viewBox="0 0 200 200" class="w-full h-full">
+            <!-- Cuerpo modular carril DIN (Hager / Orbis T20) -->
+            <rect x="55" y="12" width="90" height="176" rx="6" fill="#f1f5f9" stroke="#475569" stroke-width="3"/>
+            <!-- Bornes superiores 1 y 3 -->
+            <circle cx="80" cy="32" r="9" fill="#334155" stroke="#0f172a" stroke-width="2" class="cursor-pointer" onclick="showTerminalTip('BORNE L (o 1): Alimentación de Fase permanente.')"/>
+            <circle cx="120" cy="32" r="9" fill="#334155" stroke="#0f172a" stroke-width="2" class="cursor-pointer" onclick="showTerminalTip('BORNE 3 (Pulsadores): Recibe la vuelta desde los pulsadores de la escalera.')"/>
+            <!-- Esquema serigrafiado como en el examen -->
+            <rect x="65" y="50" width="70" height="55" rx="4" fill="#e2e8f0" stroke="#94a3b8"/>
+            <text x="100" y="65" text-anchor="middle" font-size="9" font-weight="900" fill="#0284c7">ORBIS T20 / HAGER</text>
+            <circle cx="80" cy="82" r="12" fill="#fff" stroke="#475569" stroke-width="2"/>
+            <line x1="80" y1="82" x2="88" y2="75" stroke="#dc2626" stroke-width="2.5"/>
+            <text x="115" y="86" text-anchor="middle" font-size="9" font-weight="bold" fill="#334155">1 - 7 min</text>
+            <!-- Bornes inferiores N y 4 (Lámpara) -->
+            <circle cx="80" cy="166" r="9" fill="#334155" stroke="#0284c7" stroke-width="2.5" class="cursor-pointer" onclick="showTerminalTip('BORNE N (o 2): Alimentación de Neutro (Azul).')"/>
+            <circle cx="120" cy="166" r="9" fill="#334155" stroke="#eab308" stroke-width="2.5" class="cursor-pointer" onclick="showTerminalTip('BORNE 4 (Lámparas ⊗): Salida temporizada hacia las bombillas.')"/>
+            <text x="80" y="150" text-anchor="middle" font-size="11" font-weight="900" fill="#0284c7">N</text>
+            <text x="120" y="150" text-anchor="middle" font-size="11" font-weight="900" fill="#b45309">4 (⊗)</text>
+          </svg>
+        `,
+        renderXraySvg: (actuated) => `
+          <svg viewBox="0 0 200 180" class="w-full h-full">
+            <text x="100" y="20" text-anchor="middle" fill="#facc15" font-size="11" font-weight="bold">${actuated ? '⏱️ TEMPORIZANDO: LUZ ENCENDIDA' : 'REPOSO: ESPERANDO PULSADOR'}</text>
+            <rect x="55" y="45" width="90" height="90" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="2.5"/>
+            <circle cx="100" cy="90" r="24" fill="none" stroke="${actuated ? '#facc15' : '#64748b'}" stroke-width="3"/>
+            <line x1="100" y1="90" x2="100" y2="72" stroke="#fff" stroke-width="2.5"/>
+            <line x1="100" y1="90" x2="${actuated ? '116' : '85'}" y2="90" stroke="#facc15" stroke-width="2.5"/>
+            <text x="100" y="158" text-anchor="middle" fill="#cbd5e1" font-size="11" font-weight="bold">${actuated ? 'Contacto interno 1-4 CERRADO' : 'Contacto interno 1-4 ABIERTO'}</text>
+          </svg>
+        `,
+        symMulti: `<svg viewBox="0 0 120 80" class="w-28 h-20"><rect x="25" y="18" width="70" height="44" fill="none" stroke="#0f172a" stroke-width="2.5"/><line x1="48" y1="18" x2="48" y2="62" stroke="#0f172a" stroke-width="2"/><text x="36" y="35" font-size="9" font-weight="bold">L</text><text x="36" y="55" font-size="9" font-weight="bold">N</text><circle cx="72" cy="40" r="9" fill="none" stroke="#0f172a" stroke-width="2"/></svg>`,
+        symUni: `<svg viewBox="0 0 120 80" class="w-28 h-20"><rect x="30" y="22" width="60" height="36" fill="none" stroke="#0f172a" stroke-width="2.5"/><circle cx="60" cy="40" r="10" fill="none" stroke="#0f172a" stroke-width="2"/><path d="M60 34 V40 H66" fill="none" stroke="#0f172a" stroke-width="2"/></svg>`
+      }
+    ];
+
+    function initStation1() {
+      const grid = document.getElementById('mechSelectorGrid');
+      grid.innerHTML = mechanismsData.map((m, idx) => `
+        <button onclick="selectMechanism(${idx})" id="mechCardBtn${idx}" class="p-3 rounded-xl border text-left transition flex flex-col justify-between ${idx === 0 ? 'bg-sky-600/20 border-sky-400 text-white shadow-lg' : 'bg-slate-800/90 border-slate-700 text-slate-300 hover:bg-slate-750'}">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-slate-900 text-sky-400">#${idx + 1}</span>
+            <span id="exploredCheck${idx}" class="text-xs">${idx === 0 ? '✅' : '⚪'}</span>
+          </div>
+          <div class="font-extrabold text-xs md:text-sm mt-2">${m.shortName}</div>
+        </button>
+      `).join('');
+      renderSelectedMechanism();
+    }
+
+    function selectMechanism(idx) {
+      currentMechIndex = idx;
+      inspectorActuated = false;
+      exploredMechs.add(idx);
+      if (exploredMechs.size === mechanismsData.length) {
+        addScore(250, 'station1');
+      } else {
+        addScore(20);
+      }
+
+      mechanismsData.forEach((_, i) => {
+        const btn = document.getElementById(`mechCardBtn${i}`);
+        const chk = document.getElementById(`exploredCheck${i}`);
+        if (exploredMechs.has(i)) chk.textContent = '✅';
+        if (i === idx) {
+          btn.className = "p-3 rounded-xl border text-left transition flex flex-col justify-between bg-sky-600/20 border-sky-400 text-white shadow-lg";
+        } else {
+          btn.className = "p-3 rounded-xl border text-left transition flex flex-col justify-between bg-slate-800/90 border-slate-700 text-slate-300 hover:bg-slate-700";
+        }
+      });
+
+      renderSelectedMechanism();
+    }
+
+    function renderSelectedMechanism() {
+      const m = mechanismsData[currentMechIndex];
+      document.getElementById('inspectorBadge').textContent = m.category;
+      document.getElementById('inspectorTitle').textContent = m.title;
+      document.getElementById('realBackSvgContainer').innerHTML = m.renderBackSvg(inspectorActuated);
+      document.getElementById('internalXraySvgContainer').innerHTML = m.renderXraySvg(inspectorActuated);
+      document.getElementById('inspectorBottomNote').innerHTML = m.bottomNote;
+      document.getElementById('symMultifilarBox').innerHTML = m.symMulti;
+      document.getElementById('symUnifilarBox').innerHTML = m.symUni;
+
+      const stateBadge = document.getElementById('stateIndicatorBadge');
+      if (inspectorActuated) {
+        stateBadge.textContent = "ESTADO: ACCIONADO (Posición B / ON)";
+        stateBadge.className = "text-xs font-extrabold px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 mt-2";
+      } else {
+        stateBadge.textContent = "ESTADO: REPOSO (Posición A)";
+        stateBadge.className = "text-xs font-extrabold px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40 mt-2";
+      }
+
+      document.getElementById('inspectorRulesList').innerHTML = m.rules.map(r => `<li>${r}</li>`).join('');
+
+      // Render quick quiz
+      document.getElementById('quickQuizQuestion').textContent = `❓ Pregunta Flash: ${m.quizQ}`;
+      const fb = document.getElementById('quickQuizFeedback');
+      fb.classList.add('hidden');
+      document.getElementById('quickQuizOptions').innerHTML = m.quizOpts.map((o) => `
+        <button onclick="answerQuickQuiz(${o.ok})" class="bg-slate-900 hover:bg-slate-800 border border-indigo-500/30 rounded-lg p-2 text-xs font-bold text-slate-200 transition text-left">
+          ${o.text}
+        </button>
+      `).join('');
+    }
+
+    function toggleInspectorActuation() {
+      inspectorActuated = !inspectorActuated;
+      const m = mechanismsData[currentMechIndex];
+      document.getElementById('internalXraySvgContainer').innerHTML = m.renderXraySvg(inspectorActuated);
+      const stateBadge = document.getElementById('stateIndicatorBadge');
+      if (inspectorActuated) {
+        stateBadge.textContent = "ESTADO: ACCIONADO (Posición B / ON)";
+        stateBadge.className = "text-xs font-extrabold px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 mt-2";
+      } else {
+        stateBadge.textContent = "ESTADO: REPOSO (Posición A)";
+        stateBadge.className = "text-xs font-extrabold px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40 mt-2";
+      }
+    }
+
+    function showTerminalTip(msg) {
+      const hint = document.getElementById('terminalHintText');
+      hint.innerHTML = `🔎 <strong>Inspección de Borne:</strong> ${msg}`;
+      hint.className = "text-xs text-center text-amber-300 font-bold mt-2 bg-amber-950/70 border border-amber-500/50 rounded-lg px-3 py-1.5 w-full";
+    }
+
+    function answerQuickQuiz(isOk) {
+      const fb = document.getElementById('quickQuizFeedback');
+      fb.classList.remove('hidden');
+      if (isOk) {
+        fb.textContent = "✅ ¡Correcto! +50 Créditos C.S.I.";
+        fb.className = "text-xs font-extrabold mt-2 text-emerald-400";
+        addScore(50);
+      } else {
+        fb.textContent = "❌ ¡Cuidado! Revisa la explicación de los bornes arriba.";
+        fb.className = "text-xs font-extrabold mt-2 text-rose-400";
+      }
+    }
+
+    // =========================================================================
+    // ESTACIÓN 2: DESPIECE Y ENSAMBLAJE POR CAPAS (PÁG. 20 UT3)
+    // =========================================================================
+    const assemblySteps = [
+      { step: 1, name: "Caja Universal de Empotrar (Cajillo)", desc: "Va incrustada en el hueco de la pared y recibe el tubo corrugado.", icon: "⬛" },
+      { step: 2, name: "Bastidor Metálico", desc: "Soporte cuadrado de acero que se atornilla al cajillo para sujetar el conjunto.", icon: "🔩" },
+      { step: 3, name: "Mecanismo Interno (Cuerpo)", desc: "Dispositivo donde embornamos los cables de cobre y encaja a presión en el bastidor.", icon: "🔌" },
+      { step: 4, name: "Marco Embellecedor", desc: "Pieza decorativa exterior que tapa el hueco entre el bastidor y la pintura de la pared.", icon: "🖼️" },
+      { step: 5, name: "Tecla o Tapa Frontal", desc: "Pieza plástica final que pulsa el usuario con el dedo, aislando cualquier parte metálica.", icon: "⬜" }
+    ];
+    let currentAssemblyProgress = 0;
+    let shuffledAssembly = [];
+
+    function initStation2() {
+      shuffledAssembly = [...assemblySteps].sort(() => Math.random() - 0.5);
+      currentAssemblyProgress = 0;
+      renderStation2();
+    }
+
+    function resetAssemblyGame() {
+      initStation2();
+    }
+
+    function clickAssemblyPiece(stepNum) {
+      const statusBox = document.getElementById('assemblyStatusText');
+      if (stepNum === currentAssemblyProgress + 1) {
+        currentAssemblyProgress++;
+        addScore(50);
+        if (currentAssemblyProgress === 5) {
+          statusBox.innerHTML = "🎉 ¡MONTAJE PERFECTO! Has ensamblado las 5 capas según normativa REBT (+250 CR).";
+          statusBox.className = "mt-4 text-sm font-black text-center text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 rounded-xl px-4 py-2.5 w-full";
+          addScore(150, 'station2');
+        } else {
+          statusBox.innerHTML = `✅ ¡Bien hecho! Pieza ${currentAssemblyProgress}/5 colocada. ¿Cuál va encima ahora?`;
+          statusBox.className = "mt-4 text-sm font-bold text-center text-sky-300 bg-sky-500/15 border border-sky-500/30 rounded-xl px-4 py-2.5 w-full";
+        }
+        renderStation2();
+      } else {
+        statusBox.innerHTML = `⚠️ ¡Orden incorrecto! No puedes montar esa pieza todavía sin haber fijado la capa anterior.`;
+        statusBox.className = "mt-4 text-sm font-bold text-center text-rose-300 bg-rose-500/20 border border-rose-500/40 rounded-xl px-4 py-2.5 w-full";
+      }
+    }
+
+    function renderStation2() {
+      const grid = document.getElementById('assemblyPiecesGrid');
+      grid.innerHTML = shuffledAssembly.map(item => {
+        const done = item.step <= currentAssemblyProgress;
+        return `
+          <button onclick="clickAssemblyPiece(${item.step})" ${done ? 'disabled' : ''} class="p-3.5 rounded-xl border text-left transition flex items-start gap-3 ${done ? 'bg-emerald-950/40 border-emerald-600/50 opacity-60 cursor-default' : 'bg-slate-800 hover:bg-slate-700 border-slate-600 shadow'}">
+            <div class="text-2xl bg-slate-900 p-2 rounded-lg border border-slate-700">${done ? '✅' : item.icon}</div>
+            <div>
+              <div class="font-extrabold text-sm text-white">${item.name}</div>
+              <div class="text-xs text-slate-300 mt-0.5">${item.desc}</div>
+            </div>
+          </button>
+        `;
+      }).join('');
+
+      // Dibujar capas acumuladas en el cajillo
+      const svgBox = document.getElementById('wallMountSvgBox');
+      let layersSvg = `<svg viewBox="0 0 220 220" class="w-full h-full">
+        <!-- Ladrillo / Pared de fondo -->
+        <rect x="10" y="10" width="200" height="200" rx="12" fill="#1e293b"/>
+        <circle cx="110" cy="110" r="65" fill="#090d16" stroke="#334155" stroke-width="2" stroke-dasharray="5 3"/>
+      `;
+      if (currentAssemblyProgress >= 1) {
+        // 1. Cajillo negro empotrado + cables asomando
+        layersSvg += `
+          <rect x="52" y="52" width="116" height="116" rx="10" fill="#111827" stroke="#374151" stroke-width="4"/>
+          <circle cx="110" cy="110" r="46" fill="#030712" stroke="#1f2937" stroke-width="3"/>
+          <path d="M90 60 Q105 95 95 115" stroke="#b45309" stroke-width="4" fill="none"/>
+          <path d="M125 60 Q115 95 125 115" stroke="#0284c7" stroke-width="4" fill="none"/>
+        `;
+      }
+      if (currentAssemblyProgress >= 2) {
+        // 2. Bastidor metálico gris con muescas
+        layersSvg += `
+          <rect x="40" y="40" width="140" height="140" rx="8" fill="none" stroke="#94a3b8" stroke-width="14"/>
+          <rect x="46" y="46" width="128" height="128" rx="4" fill="none" stroke="#cbd5e1" stroke-width="2"/>
+          <circle cx="45" cy="110" r="4" fill="#0f172a"/><circle cx="175" cy="110" r="4" fill="#0f172a"/>
+        `;
+      }
+      if (currentAssemblyProgress >= 3) {
+        // 3. Mecanismo interno insertado en el centro
+        layersSvg += `
+          <rect x="72" y="72" width="76" height="76" rx="6" fill="#cbd5e1" stroke="#475569" stroke-width="3"/>
+          <rect x="92" y="88" width="36" height="44" rx="3" fill="#334155"/>
+          <circle cx="110" cy="110" r="8" fill="#f59e0b"/>
+        `;
+      }
+      if (currentAssemblyProgress >= 4) {
+        // 4. Marco embellecedor blanco exterior
+        layersSvg += `
+          <rect x="26" y="26" width="168" height="168" rx="12" fill="none" stroke="#f8fafc" stroke-width="22"/>
+          <rect x="26" y="26" width="168" height="168" rx="12" fill="none" stroke="#cbd5e1" stroke-width="2"/>
+        `;
+      }
+      if (currentAssemblyProgress >= 5) {
+        // 5. Tecla blanca central lista para pulsar
+        layersSvg += `
+          <rect x="58" y="58" width="104" height="104" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="3"/>
+          <line x1="65" y1="145" x2="155" y2="145" stroke="#e2e8f0" stroke-width="3"/>
+          <text x="110" y="115" text-anchor="middle" fill="#10b981" font-size="14" font-weight="900">¡LISTO!</text>
+        `;
+      }
+      layersSvg += `</svg>`;
+      svgBox.innerHTML = layersSvg;
+    }
+
+    // =========================================================================
+    // ESTACIÓN 3: SIMULADOR DE CABLEADO INTERACTIVO (4 NIVELES DE UT3)
+    // =========================================================================
+    let currentWiringLevel = 0;
+    let selectedWireColor = 'phase'; // 'phase' | 'bridge' | 'neutral' | 'earth'
+    let selectedTerminalId = null;
+    let userWires = []; // { from, to, colorType }
+    let powerOn = false;
+    // Estados de los mecanismos en vivo cuando powerOn = true
+    let mechStates = { S1: false, S2: false, S3: false, P1: false };
+    let timerTimeout = null;
+
+    const colorMap = {
+      phase: { hex: '#b45309', name: 'Marrón (Fase)' },
+      bridge: { hex: '#94a3b8', name: 'Negro/Gris (Puente/Vuelta)' },
+      neutral: { hex: '#0284c7', name: 'Azul (Neutro)' },
+      earth: { hex: '#22c55e', name: 'Verde-Amarillo (Tierra PE)' }
+    };
+
+    const wiringLevels = [
+      {
+        title: "Misión 1: Punto de Luz Simple + Base de Enchufe con Tierra (Págs. 2 y 17 UT3)",
+        desc: "Cablea la Fase (Marrón), el retorno de lámpara (Negro/Gris), el Neutro (Azul) y la Toma de Tierra (Verde-Amarillo) desde las líneas generales superiores.",
+        terminals: [
+          // Línea general en caja de registro
+          { id: 'LINE_L', x: 140, y: 70, label: 'L1 (Fase)', type: 'source_L' },
+          { id: 'LINE_N', x: 140, y: 115, label: 'N (Neutro)', type: 'source_N' },
+          { id: 'LINE_PE', x: 140, y: 160, label: 'PE (Tierra)', type: 'source_PE' },
+          // Interruptor Simple S1
+          { id: 'S1_L', x: 260, y: 310, label: 'L (Común)', mech: 'S1' },
+          { id: 'S1_OUT', x: 260, y: 390, label: '1 (Salida)', mech: 'S1' },
+          // Lámpara E1
+          { id: 'LAMP_IN', x: 520, y: 270, label: 'Fase Vuelta', mech: 'LAMP' },
+          { id: 'LAMP_N', x: 580, y: 270, label: 'Neutro', mech: 'LAMP' },
+          // Base Enchufe Schuko TC1
+          { id: 'TC_L', x: 760, y: 350, label: 'L', mech: 'TC1' },
+          { id: 'TC_PE', x: 810, y: 375, label: 'PE ⏚', mech: 'TC1' },
+          { id: 'TC_N', x: 860, y: 350, label: 'N', mech: 'TC1' }
+        ],
+        solutionWires: [
+          { from: 'LINE_L', to: 'S1_L', colorType: 'phase' },
+          { from: 'S1_OUT', to: 'LAMP_IN', colorType: 'bridge' },
+          { from: 'LINE_N', to: 'LAMP_N', colorType: 'neutral' },
+          { from: 'LINE_L', to: 'TC_L', colorType: 'phase' },
+          { from: 'LINE_N', to: 'TC_N', colorType: 'neutral' },
+          { from: 'LINE_PE', to: 'TC_PE', colorType: 'earth' }
+        ]
+      },
+      {
+        title: "Misión 2: Lámpara Conmutada desde 2 Puntos - Puerta y Cama (Pág. 12 UT3)",
+        desc: "Conecta la Fase al común (L) de S1, une las salidas 1 y 2 entre ambos conmutadores con puentes (Negro/Gris), lleva el común (L) de S2 a la lámpara y cierra con Neutro (Azul).",
+        terminals: [
+          { id: 'LINE_L', x: 140, y: 80, label: 'L1 (Fase)', type: 'source_L' },
+          { id: 'LINE_N', x: 140, y: 130, label: 'N (Neutro)', type: 'source_N' },
+          // Conmutador S1 (Puerta)
+          { id: 'S1_L', x: 250, y: 295, label: 'L (Común)' },
+          { id: 'S1_1', x: 220, y: 395, label: 'Salida 1' },
+          { id: 'S1_2', x: 280, y: 395, label: 'Salida 2' },
+          // Conmutador S2 (Cabecero Cama)
+          { id: 'S2_L', x: 560, y: 295, label: 'L (Común)' },
+          { id: 'S2_1', x: 530, y: 395, label: 'Salida 1' },
+          { id: 'S2_2', x: 590, y: 395, label: 'Salida 2' },
+          // Lámpara E1
+          { id: 'LAMP_IN', x: 810, y: 270, label: 'Vuelta' },
+          { id: 'LAMP_N', x: 870, y: 270, label: 'Neutro' }
+        ],
+        solutionWires: [
+          { from: 'LINE_L', to: 'S1_L', colorType: 'phase' },
+          { from: 'S1_1', to: 'S2_1', colorType: 'bridge' },
+          { from: 'S1_2', to: 'S2_2', colorType: 'bridge' },
+          { from: 'S2_L', to: 'LAMP_IN', colorType: 'bridge' },
+          { from: 'LINE_N', to: 'LAMP_N', colorType: 'neutral' }
+        ]
+      },
+      {
+        title: "Misión 3: Conmutada desde 3 Puntos con Cruzamiento (Págs. 5, 13 y 14 UT3)",
+        desc: "¡El clásico de examen! S1 y S3 son conmutadores simples (3 bornes) y S2 en el centro es el Conmutador de Cruce (4 bornes). Une los puentes viajeros y alimenta la lámpara.",
+        terminals: [
+          { id: 'LINE_L', x: 120, y: 75, label: 'L1 (Fase)', type: 'source_L' },
+          { id: 'LINE_N', x: 120, y: 125, label: 'N (Neutro)', type: 'source_N' },
+          // S1 Conmutador extremo izquierdo
+          { id: 'S1_L', x: 200, y: 295, label: 'L (Común)' },
+          { id: 'S1_1', x: 170, y: 395, label: '1' },
+          { id: 'S1_2', x: 230, y: 395, label: '2' },
+          // S2 Conmutador de Cruce central (4 bornes)
+          { id: 'S2_IN1', x: 420, y: 295, label: 'Ent 1' },
+          { id: 'S2_IN2', x: 480, y: 295, label: 'Ent 2' },
+          { id: 'S2_OUT1', x: 420, y: 395, label: 'Sal 3' },
+          { id: 'S2_OUT2', x: 480, y: 395, label: 'Sal 4' },
+          // S3 Conmutador extremo derecho
+          { id: 'S3_L', x: 680, y: 295, label: 'L (Común)' },
+          { id: 'S3_1', x: 650, y: 395, label: '1' },
+          { id: 'S3_2', x: 710, y: 395, label: '2' },
+          // Lámpara
+          { id: 'LAMP_IN', x: 855, y: 270, label: 'Vuelta' },
+          { id: 'LAMP_N', x: 915, y: 270, label: 'Neutro' }
+        ],
+        solutionWires: [
+          { from: 'LINE_L', to: 'S1_L', colorType: 'phase' },
+          { from: 'S1_1', to: 'S2_IN1', colorType: 'bridge' },
+          { from: 'S1_2', to: 'S2_IN2', colorType: 'bridge' },
+          { from: 'S2_OUT1', to: 'S3_1', colorType: 'bridge' },
+          { from: 'S2_OUT2', to: 'S3_2', colorType: 'bridge' },
+          { from: 'S3_L', to: 'LAMP_IN', colorType: 'bridge' },
+          { from: 'LINE_N', to: 'LAMP_N', colorType: 'neutral' }
+        ]
+      },
+      {
+        title: "Misión 4: Automático de Escalera (Minutero) con Pulsador (Pág. 24 UT3)",
+        desc: "Alimenta el Minutero con Fase (borne L) y Neutro (borne N). Lleva Fase al Pulsador S1, la salida del pulsador al borne 3 del minutero, y el borne 4 (⊗) a la lámpara.",
+        terminals: [
+          { id: 'LINE_L', x: 140, y: 80, label: 'L1 (Fase)', type: 'source_L' },
+          { id: 'LINE_N', x: 140, y: 130, label: 'N (Neutro)', type: 'source_N' },
+          // Pulsador S1
+          { id: 'S1_L', x: 260, y: 310, label: 'L (Entrada)' },
+          { id: 'S1_OUT', x: 260, y: 390, label: 'Impulso' },
+          // Minutero Orbis/Hager
+          { id: 'MIN_L', x: 515, y: 275, label: '1 (L)' },
+          { id: 'MIN_3', x: 565, y: 275, label: '3 (Puls)' },
+          { id: 'MIN_N', x: 515, y: 415, label: '2 (N)' },
+          { id: 'MIN_4', x: 565, y: 415, label: '4 (Lámp ⊗)' },
+          // Lámpara
+          { id: 'LAMP_IN', x: 810, y: 270, label: 'Vuelta 4' },
+          { id: 'LAMP_N', x: 870, y: 270, label: 'Neutro' }
+        ],
+        solutionWires: [
+          { from: 'LINE_L', to: 'MIN_L', colorType: 'phase' },
+          { from: 'LINE_N', to: 'MIN_N', colorType: 'neutral' },
+          { from: 'LINE_L', to: 'S1_L', colorType: 'phase' },
+          { from: 'S1_OUT', to: 'MIN_3', colorType: 'bridge' },
+          { from: 'MIN_4', to: 'LAMP_IN', colorType: 'bridge' },
+          { from: 'LINE_N', to: 'LAMP_N', colorType: 'neutral' }
+        ]
+      }
+    ];
+
+    function loadWiringLevel(lvlIdx) {
+      currentWiringLevel = lvlIdx;
+      userWires = [];
+      selectedTerminalId = null;
+      powerOn = false;
+      mechStates = { S1: false, S2: false, S3: false, P1: false };
+      if (timerTimeout) clearTimeout(timerTimeout);
+
+      for (let i = 0; i < 4; i++) {
+        const b = document.getElementById(`lvlBtn${i}`);
+        b.className = i === lvlIdx
+          ? "px-3 py-2 rounded-xl text-xs font-extrabold bg-emerald-600 text-white shadow"
+          : "px-3 py-2 rounded-xl text-xs font-extrabold bg-slate-700 text-slate-200 hover:bg-slate-600";
+      }
+
+      const lvl = wiringLevels[lvlIdx];
+      document.getElementById('wiringMissionTitle').textContent = lvl.title;
+      document.getElementById('wiringMissionDesc').textContent = lvl.desc;
+      updatePowerBtnUI();
+      setWiringFeedback("🛠️", "Selecciona el color de cable adecuado y toca dos bornes para unirlos.", "text-slate-200");
+      renderWorkbench();
+    }
+
+    function selectWireColor(colorKey) {
+      selectedWireColor = colorKey;
+      ['phase', 'bridge', 'neutral', 'earth'].forEach(k => {
+        const btn = document.getElementById(`wireBtn-${k}`);
+        if (k === colorKey) {
+          btn.classList.add('ring-2', 'ring-white', 'scale-105');
+        } else {
+          btn.classList.remove('ring-2', 'ring-white', 'scale-105');
+        }
+      });
+    }
+
+    function clickTerminal(termId) {
+      if (powerOn) {
+        setWiringFeedback("⚠️", "¡REGLA DE ORO PRL! Corta primero la corriente (Bajar PIA) antes de manipular cables.", "text-rose-400");
+        return;
+      }
+      if (!selectedTerminalId) {
+        selectedTerminalId = termId;
+        setWiringFeedback("🔌", `Borne inicial seleccionado (${termId}). Ahora toca el borne de destino.`, "text-amber-300");
+        renderWorkbench();
+      } else if (selectedTerminalId === termId) {
+        selectedTerminalId = null;
+        renderWorkbench();
+      } else {
+        // Evitar duplicados exactos
+        const exists = userWires.some(w =>
+          (w.from === selectedTerminalId && w.to === termId) ||
+          (w.from === termId && w.to === selectedTerminalId)
+        );
+        if (!exists) {
+          userWires.push({
+            from: selectedTerminalId,
+            to: termId,
+            colorType: selectedWireColor
+          });
+          setWiringFeedback("✅", `Cable ${colorMap[selectedWireColor].name} tendido correctamente.`, "text-emerald-300");
+        }
+        selectedTerminalId = null;
+        renderWorkbench();
+      }
+    }
+
+    function undoLastWire() {
+      if (powerOn) return;
+      userWires.pop();
+      selectedTerminalId = null;
+      renderWorkbench();
+    }
+
+    function clearAllWires() {
+      if (powerOn) verifyAndTogglePower();
+      userWires = [];
+      selectedTerminalId = null;
+      renderWorkbench();
+    }
+
+    function showSolutionWires() {
+      if (powerOn) verifyAndTogglePower();
+      userWires = JSON.parse(JSON.stringify(wiringLevels[currentWiringLevel].solutionWires));
+      selectedTerminalId = null;
+      setWiringFeedback("👁️", "Esquema oficial cargado. ¡Ahora sube el PIA y pulsa los mecanismos para ver cómo circula la corriente!", "text-indigo-300");
+      renderWorkbench();
+    }
+
+    // Comprobar si dos bornes están conectados por el alumno
+    function hasWire(a, b, requiredColor = null) {
+      return userWires.some(w => {
+        const matchEnds = (w.from === a && w.to === b) || (w.from === b && w.to === a);
+        if (!matchEnds) return false;
+        return requiredColor ? w.colorType === requiredColor : true;
+      });
+    }
+
+    function checkCurrentWiringValidity() {
+      const lvl = currentWiringLevel;
+      if (lvl === 0) {
+        const lightOk = hasWire('LINE_L', 'S1_L') && hasWire('S1_OUT', 'LAMP_IN') && hasWire('LINE_N', 'LAMP_N');
+        const socketOk = hasWire('LINE_L', 'TC_L') && hasWire('LINE_N', 'TC_N') && hasWire('LINE_PE', 'TC_PE', 'earth');
+        return { ok: lightOk && socketOk, msg: lightOk && socketOk ? "¡Circuito C1 y C2 perfectos!" : "Revisa: Fase a L del interruptor y enchufe, vuelta a lámpara, Neutros azules y Tierra Verde-Amarillo al centro del Schuko." };
+      }
+      if (lvl === 1) {
+        const lOk = hasWire('LINE_L', 'S1_L');
+        const vOk = hasWire('S2_L', 'LAMP_IN');
+        const nOk = hasWire('LINE_N', 'LAMP_N');
+        const bridgesDirect = hasWire('S1_1', 'S2_1') && hasWire('S1_2', 'S2_2');
+        const bridgesCross = hasWire('S1_1', 'S2_2') && hasWire('S1_2', 'S2_1');
+        const allOk = lOk && vOk && nOk && (bridgesDirect || bridgesCross);
+        return { ok: allOk, msg: allOk ? "¡Conmutada de 2 puntos perfecta!" : "Revisa: Fase al común L de S1, los 2 puentes entre salidas 1-2 de S1 y S2, común L de S2 a la lámpara y Neutro azul." };
+      }
+      if (lvl === 2) {
+        const lOk = hasWire('LINE_L', 'S1_L');
+        const vOk = hasWire('S3_L', 'LAMP_IN');
+        const nOk = hasWire('LINE_N', 'LAMP_N');
+        const b1 = (hasWire('S1_1', 'S2_IN1') && hasWire('S1_2', 'S2_IN2')) || (hasWire('S1_1', 'S2_IN2') && hasWire('S1_2', 'S2_IN1'));
+        const b2 = (hasWire('S2_OUT1', 'S3_1') && hasWire('S2_OUT2', 'S3_2')) || (hasWire('S2_OUT1', 'S3_2') && hasWire('S2_OUT2', 'S3_1'));
+        const allOk = lOk && vOk && nOk && b1 && b2;
+        return { ok: allOk, msg: allOk ? "¡Conmutada de 3 puntos con cruzamiento impecable!" : "Revisa los 2 puentes de S1 a las entradas superiores del cruce S2, y las salidas inferiores de S2 a S3." };
+      }
+      if (lvl === 3) {
+        const allOk = hasWire('LINE_L', 'MIN_L') && hasWire('LINE_N', 'MIN_N') && hasWire('LINE_L', 'S1_L') && hasWire('S1_OUT', 'MIN_3') && hasWire('MIN_4', 'LAMP_IN') && hasWire('LINE_N', 'LAMP_N');
+        return { ok: allOk, msg: allOk ? "¡Minutero de escalera listo! Pulsa el botón de planta S1." : "Revisa: Fase a 1(L) del minutero y al pulsador, salida del pulsador al 3, salida 4 a lámpara y Neutros." };
+      }
+      return { ok: false, msg: "" };
+    }
+
+    function verifyAndTogglePower() {
+      if (powerOn) {
+        powerOn = false;
+        updatePowerBtnUI();
+        setWiringFeedback("🔒", "PIA bajado (Sin tensión). Ya puedes modificar el cableado con seguridad.", "text-slate-300");
+        renderWorkbench();
+        return;
+      }
+
+      const check = checkCurrentWiringValidity();
+      if (!check.ok) {
+        setWiringFeedback("⚠️", `Fallo en la auditoría antes de subir el PIA: ${check.msg}`, "text-amber-400");
+        return;
+      }
+
+      powerOn = true;
+      addScore(200, 'station3');
+      updatePowerBtnUI();
+      setWiringFeedback("⚡", `¡TENSIÓN ACTIVADA (230V)! ${check.msg} ¡Toca ahora los interruptores del panel para accionar las luces!`, "text-emerald-400");
+      renderWorkbench();
+    }
+
+    function updatePowerBtnUI() {
+      const btn = document.getElementById('powerToggleBtn');
+      const txt = document.getElementById('powerToggleBtnText');
+      if (powerOn) {
+        btn.className = "bg-rose-600 hover:bg-rose-500 text-white font-black text-xs px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition animate-pulse";
+        txt.textContent = "BAJAR PIA (CORTAR 230V)";
+      } else {
+        btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition";
+        txt.textContent = "SUBIR PIA Y PROBAR";
+      }
+    }
+
+    function setWiringFeedback(icon, text, colorClass) {
+      document.getElementById('wiringFeedbackIcon').textContent = icon;
+      const el = document.getElementById('wiringFeedbackText');
+      el.textContent = text;
+      el.className = `font-semibold ${colorClass}`;
+    }
+
+    // Evaluar si la lámpara se enciende cuando powerOn === true
+    function isLampLit() {
+      if (!powerOn) return false;
+      if (currentWiringLevel === 0) {
+        return mechStates.S1;
+      }
+      if (currentWiringLevel === 1) {
+        // Dos conmutadores: se enciende cuando coinciden las vías
+        return mechStates.S1 === mechStates.S2;
+      }
+      if (currentWiringLevel === 2) {
+        // Dos conmutadores + cruce: XOR de los 3 estados
+        const activeBranch = mechStates.S1 ? 2 : 1;
+        const afterCross = mechStates.S2 ? (activeBranch === 1 ? 2 : 1) : activeBranch;
+        const s3Target = mechStates.S3 ? 2 : 1;
+        return afterCross === s3Target;
+      }
+      if (currentWiringLevel === 3) {
+        return mechStates.P1;
+      }
+      return false;
+    }
+
+    function toggleBenchSwitch(swKey) {
+      if (currentWiringLevel === 3 && swKey === 'S1') {
+        // En el nivel del minutero, S1 es pulsador y activa 5 segundos el minutero
+        mechStates.S1 = true;
+        mechStates.P1 = true;
+        renderWorkbench();
+        setTimeout(() => { mechStates.S1 = false; renderWorkbench(); }, 350);
+        if (timerTimeout) clearTimeout(timerTimeout);
+        setWiringFeedback("⏱️", "¡Pulsador accionado! El minutero mantendrá la escalera iluminada durante 4 segundos...", "text-amber-300");
+        timerTimeout = setTimeout(() => {
+          mechStates.P1 = false;
+          if (powerOn) setWiringFeedback("🌙", "Tiempo del minutero agotado: la luz de la escalera se ha apagado automáticamente.", "text-sky-300");
+          renderWorkbench();
+        }, 4000);
+        return;
+      }
+      mechStates[swKey] = !mechStates[swKey];
+      renderWorkbench();
+    }
+
+    function renderWorkbench() {
+      const svg = document.getElementById('workbenchSvg');
+      const lvl = wiringLevels[currentWiringLevel];
+      const lampOn = isLampLit();
+
+      document.getElementById('wiresCountLabel').textContent = `${userWires.length} / ${lvl.solutionWires.length} cables`;
+
+      let html = `
+        <!-- Cuadrícula técnica de fondo -->
+        <defs>
+          <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+            <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#1e293b" stroke-width="1"/>
+          </pattern>
+        </defs>
+        <rect width="1000" height="540" fill="url(#grid)" />
+
+        <!-- Cuadro general PIA 2P a la izquierda arriba -->
+        <g transform="translate(20, 35)" class="cursor-pointer" onclick="verifyAndTogglePower()">
+          <rect x="0" y="0" width="85" height="145" rx="6" fill="#e2e8f0" stroke="#64748b" stroke-width="3"/>
+          <rect x="0" y="28" width="85" height="8" fill="#dc2626"/>
+          <text x="42" y="20" text-anchor="middle" font-size="10" font-weight="900" fill="#0f172a">PIA 2P</text>
+          <text x="42" y="50" text-anchor="middle" font-size="9" font-weight="bold" fill="#334155">230V~ C10/16</text>
+          <!-- Maneta del PIA -->
+          <rect x="12" y="${powerOn ? '62' : '86'}" width="61" height="22" rx="3" fill="#0f172a"/>
+          <rect x="16" y="${powerOn ? '90' : '64'}" width="22" height="10" rx="2" fill="${powerOn ? '#dc2626' : '#16a34a'}"/>
+          <rect x="47" y="${powerOn ? '90' : '64'}" width="22" height="10" rx="2" fill="${powerOn ? '#dc2626' : '#16a34a'}"/>
+          <text x="42" y="132" text-anchor="middle" font-size="10" font-weight="900" fill="${powerOn ? '#dc2626' : '#15803d'}">${powerOn ? 'ON (CON TENSIÓN)' : 'OFF (SEGURO)'}</text>
+        </g>
+
+        <!-- Líneas generales horizontales de distribución en la parte superior -->
+        <line x1="140" y1="70" x2="940" y2="70" stroke="#78350f" stroke-width="3" stroke-dasharray="6 4"/>
+        <line x1="140" y1="120" x2="940" y2="120" stroke="#0c4a6e" stroke-width="3" stroke-dasharray="6 4"/>
+        ${currentWiringLevel === 0 ? `<line x1="140" y1="160" x2="940" y2="160" stroke="#14532d" stroke-width="3" stroke-dasharray="6 4"/>` : ''}
+      `;
+
+      // Dibujar las cajas de los mecanismos según el nivel
+      if (currentWiringLevel === 0) {
+        // S1 Interruptor + Lámpara + Base Schuko
+        html += drawSwitchBox(200, 260, 120, 165, "INTERRUPTOR S1", "S1", mechStates.S1, "1 borne L y 1 salida");
+        html += drawLampUnit(550, 195, lampOn);
+        html += drawSchukoUnit(735, 265, powerOn);
+      } else if (currentWiringLevel === 1) {
+        // 2 Conmutadores S1 y S2 + Lámpara
+        html += drawSwitchBox(180, 255, 140, 175, "CONMUTADOR S1 (Puerta)", "S1", mechStates.S1, "Posición: " + (mechStates.S1 ? "Vía 2" : "Vía 1"));
+        html += drawSwitchBox(490, 255, 140, 175, "CONMUTADOR S2 (Cama)", "S2", mechStates.S2, "Posición: " + (mechStates.S2 ? "Vía 2" : "Vía 1"));
+        html += drawLampUnit(840, 195, lampOn);
+      } else if (currentWiringLevel === 2) {
+        // S1 Conmutador + S2 Cruce + S3 Conmutador + Lámpara
+        html += drawSwitchBox(135, 255, 130, 175, "CONMUTADOR S1", "S1", mechStates.S1, mechStates.S1 ? "Vía 2" : "Vía 1");
+        html += drawSwitchBox(380, 255, 140, 175, "CRUZAMIENTO S2", "S2", mechStates.S2, mechStates.S2 ? "Cruzado (X)" : "Directo (||)");
+        html += drawSwitchBox(615, 255, 130, 175, "CONMUTADOR S3", "S3", mechStates.S3, mechStates.S3 ? "Vía 2" : "Vía 1");
+        html += drawLampUnit(885, 195, lampOn);
+      } else if (currentWiringLevel === 3) {
+        // S1 Pulsador + Minutero + Lámpara
+        html += drawSwitchBox(195, 260, 130, 165, "PULSADOR PLANTA S1", "S1", mechStates.S1, "Retorno por muelle");
+        html += drawMinuteroUnit(475, 240, mechStates.P1);
+        html += drawLampUnit(840, 195, lampOn);
+      }
+
+      // Dibujar los cables tendidos por el alumno
+      userWires.forEach(w => {
+        const t1 = lvl.terminals.find(t => t.id === w.from);
+        const t2 = lvl.terminals.find(t => t.id === w.to);
+        if (!t1 || !t2) return;
+        const strokeColor = colorMap[w.colorType].hex;
+        const midY = (t1.y + t2.y) / 2 - 25;
+        const pathData = `M ${t1.x} ${t1.y} Q ${(t1.x + t2.x) / 2} ${midY} ${t2.x} ${t2.y}`;
+        html += `
+          <path d="${pathData}" fill="none" stroke="#0f172a" stroke-width="9" stroke-linecap="round"/>
+          <path d="${pathData}" fill="none" stroke="${strokeColor}" stroke-width="5.5" stroke-linecap="round" ${w.colorType === 'earth' ? 'stroke-dasharray="10 6"' : ''}/>
+        `;
+        if (w.colorType === 'earth') {
+          html += `<path d="${pathData}" fill="none" stroke="#facc15" stroke-width="5.5" stroke-dasharray="6 10" stroke-dashoffset="8" stroke-linecap="round"/>`;
+        }
+        if (powerOn && lampOn) {
+          html += `<path d="${pathData}" fill="none" stroke="#fde047" stroke-width="3" class="current-flow"/>`;
+        }
+      });
+
+      // Dibujar los bornes interactivos encima de todo
+      lvl.terminals.forEach(t => {
+        const isSel = selectedTerminalId === t.id;
+        let fillCol = "#1e293b";
+        if (t.type === 'source_L') fillCol = "#b45309";
+        if (t.type === 'source_N') fillCol = "#0284c7";
+        if (t.type === 'source_PE') fillCol = "#16a34a";
+
+        html += `
+          <g class="terminal-node" onclick="clickTerminal('${t.id}')">
+            <circle cx="${t.x}" cy="${t.y}" r="11" fill="${fillCol}" stroke="${isSel ? '#facc15' : '#f8fafc'}" stroke-width="${isSel ? '4' : '2.5'}" class="${isSel ? 'terminal-selected' : ''}"/>
+            <circle cx="${t.x}" cy="${t.y}" r="4" fill="#94a3b8"/>
+            <rect x="${t.x - 38}" y="${t.y + 14}" width="76" height="17" rx="4" fill="#090d16" fill-opacity="0.85"/>
+            <text x="${t.x}" y="${t.y + 26}" text-anchor="middle" font-size="10" font-weight="800" fill="#e2e8f0">${t.label}</text>
+          </g>
+        `;
+      });
+
+      svg.innerHTML = html;
+    }
+
+    function drawSwitchBox(x, y, w, h, title, swKey, state, subLabel) {
+      return `
+        <g>
+          <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="#cbd5e1" stroke="#64748b" stroke-width="3"/>
+          <rect x="${x + 10}" y="${y + 24}" width="${w - 20}" height="${h - 34}" rx="8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+          <text x="${x + w / 2}" y="${y - 8}" text-anchor="middle" font-size="11" font-weight="900" fill="#38bdf8">${title}</text>
+          <!-- Botón central para accionar la tecla -->
+          <g class="cursor-pointer" onclick="toggleBenchSwitch('${swKey}')">
+            <rect x="${x + 22}" y="${y + 62}" width="${w - 44}" height="44" rx="6" fill="${state ? '#f59e0b' : '#334155'}" stroke="#0f172a" stroke-width="2"/>
+            <text x="${x + w / 2}" y="${y + 83}" text-anchor="middle" font-size="10" font-weight="900" fill="${state ? '#0f172a' : '#f8fafc'}">👆 PULSAR</text>
+            <text x="${x + w / 2}" y="${y + 98}" text-anchor="middle" font-size="9" font-weight="bold" fill="${state ? '#0f172a' : '#94a3b8'}">${subLabel}</text>
+          </g>
+        </g>
+      `;
+    }
+
+    function drawLampUnit(cx, cy, isOn) {
+      return `
+        <g>
+          <text x="${cx}" y="${cy - 48}" text-anchor="middle" font-size="12" font-weight="900" fill="${isOn ? '#fde047' : '#94a3b8'}">${isOn ? '💡 ¡LÁMPARA ENCENDIDA!' : 'LÁMPARA E1 (APAGADA)'}</text>
+          <circle cx="${cx}" cy="${cy}" r="36" fill="${isOn ? '#fef08a' : '#1e293b'}" stroke="${isOn ? '#facc15' : '#64748b'}" stroke-width="4" class="${isOn ? 'bulb-on' : ''}"/>
+          <line x1="${cx - 18}" y1="${cy - 18}" x2="${cx + 18}" y2="${cy + 18}" stroke="${isOn ? '#ca8a04' : '#64748b'}" stroke-width="4"/>
+          <line x1="${cx + 18}" y1="${cy - 18}" x2="${cx - 18}" y2="${cy + 18}" stroke="${isOn ? '#ca8a04' : '#64748b'}" stroke-width="4"/>
+          <rect x="${cx - 42}" y="${cy + 42}" width="84" height="45" rx="6" fill="#334155" stroke="#64748b" stroke-width="2"/>
+        </g>
+      `;
+    }
+
+    function drawSchukoUnit(x, y, energized) {
+      return `
+        <g>
+          <text x="${x + 75}" y="${y - 10}" text-anchor="middle" font-size="11" font-weight="900" fill="#38bdf8">ENCHUFE SCHUKO 16A (2P+T)</text>
+          <rect x="${x}" y="${y}" width="150" height="150" rx="14" fill="#e2e8f0" stroke="#64748b" stroke-width="3"/>
+          <circle cx="${x + 75}" cy="${y + 75}" r="54" fill="#f8fafc" stroke="#94a3b8" stroke-width="3"/>
+          <text x="${x + 75}" y="${y + 38}" text-anchor="middle" font-size="10" font-weight="900" fill="${energized ? '#16a34a' : '#475569'}">${energized ? '⚡ 230V OK' : '230V~ 16A'}</text>
+        </g>
+      `;
+    }
+
+    function drawMinuteroUnit(x, y, active) {
+      return `
+        <g>
+          <text x="${x + 65}" y="${y - 10}" text-anchor="middle" font-size="11" font-weight="900" fill="#facc15">MINUTERO ESCALERA (T20)</text>
+          <rect x="${x}" y="${y}" width="130" height="205" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="3"/>
+          <rect x="${x + 15}" y="${y + 62}" width="100" height="80" rx="6" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+          <text x="${x + 65}" y="${y + 95}" text-anchor="middle" font-size="11" font-weight="900" fill="${active ? '#fde047' : '#38bdf8'}">${active ? '⏱️ ACTIVO (ON)' : 'ORBIS / HAGER'}</text>
+          <text x="${x + 65}" y="${y + 118}" text-anchor="middle" font-size="9" font-weight="bold" fill="#94a3b8">${active ? 'Luz encendida...' : 'Espera pulso en 3'}</text>
+        </g>
+      `;
+    }
+
+    // =========================================================================
+    // ESTACIÓN 4: PLANO ARQUITECTÓNICO UNIFILAR INTERACTIVO
+    // =========================================================================
+    const planPaletteItems = [
+      { code: 'CAJA', name: 'Caja de Registro', desc: 'Derivación principal', svg: `<circle cx="20" cy="20" r="10" fill="none" stroke="#0f172a" stroke-width="3"/>` },
+      { code: 'LUZ', name: 'Punto de Luz (Lámpara)', desc: 'Cruz en el centro del techo', svg: `<line x1="8" y1="8" x2="32" y2="32" stroke="#0f172a" stroke-width="3"/><line x1="32" y1="8" x2="8" y2="32" stroke="#0f172a" stroke-width="3"/>` },
+      { code: 'CONM', name: 'Conmutador Simple', desc: 'Para extremos (Puerta / Mesilla)', svg: `<circle cx="20" cy="20" r="7" fill="none" stroke="#0f172a" stroke-width="2.5"/><line x1="25" y1="14" x2="34" y2="5" stroke="#0f172a" stroke-width="2.5"/><line x1="15" y1="26" x2="6" y2="35" stroke="#0f172a" stroke-width="2.5"/>` },
+      { code: 'CRUCE', name: 'Conmutador de Cruce', desc: 'Con 4 aspas (3er punto de mando)', svg: `<circle cx="20" cy="20" r="7" fill="none" stroke="#0f172a" stroke-width="2.5"/><line x1="25" y1="15" x2="34" y2="6" stroke="#0f172a" stroke-width="2.5"/><line x1="15" y1="25" x2="6" y2="34" stroke="#0f172a" stroke-width="2.5"/><line x1="15" y1="15" x2="6" y2="6" stroke="#0f172a" stroke-width="2.5"/><line x1="25" y1="25" x2="34" y2="34" stroke="#0f172a" stroke-width="2.5"/>` },
+      { code: 'ENCH', name: 'Base Enchufe con Tierra', desc: 'Toma Schuko en pared', svg: `<path d="M10 14 A10 10 0 0 0 30 14" fill="none" stroke="#0f172a" stroke-width="2.5"/><line x1="20" y1="24" x2="20" y2="36" stroke="#0f172a" stroke-width="2.5"/><line x1="12" y1="24" x2="28" y2="24" stroke="#0f172a" stroke-width="2.5"/>` }
+    ];
+
+    // Huecos del plano de habitación (Pág. 5 UT3)
+    const planSlots = [
+      { id: 1, x: 105, y: 260, label: "[1] Entrada línea", expected: ['CAJA'], placed: null },
+      { id: 2, x: 175, y: 335, label: "[2] Junto a Puerta", expected: ['CONM'], placed: null },
+      { id: 3, x: 350, y: 215, label: "[3] Centro Techo", expected: ['LUZ'], placed: null },
+      { id: 4, x: 245, y: 80, label: "[4] Mesilla Izq. (Pto Intermedio)", expected: ['CRUCE', 'CONM'], placed: null },
+      { id: 5, x: 455, y: 80, label: "[5] Mesilla Der. (Extremo)", expected: ['CONM', 'CRUCE'], placed: null },
+      { id: 6, x: 585, y: 215, label: "[6] Pared Derecha (Fuerza)", expected: ['ENCH'], placed: null }
+    ];
+    let selectedPlanSymbol = 'CAJA';
+
+    function initStation4() {
+      const pal = document.getElementById('planSymbolsPalette');
+      pal.innerHTML = planPaletteItems.map(item => `
+        <button onclick="selectPlanSymbol('${item.code}')" id="palBtn-${item.code}" class="p-2.5 rounded-xl border text-left transition flex flex-col items-center ${item.code === selectedPlanSymbol ? 'bg-purple-600/30 border-purple-400 text-white shadow' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}">
+          <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center mb-1.5 shadow">
+            <svg viewBox="0 0 40 40" class="w-9 h-9">${item.svg}</svg>
+          </div>
+          <div class="font-extrabold text-xs text-center">${item.name}</div>
+          <div class="text-[10px] text-slate-400 text-center">${item.desc}</div>
+        </button>
+      `).join('');
+      renderFloorPlan();
+    }
+
+    function selectPlanSymbol(code) {
+      selectedPlanSymbol = code;
+      planPaletteItems.forEach(item => {
+        const b = document.getElementById(`palBtn-${item.code}`);
+        b.className = item.code === code
+          ? "p-2.5 rounded-xl border text-left transition flex flex-col items-center bg-purple-600/30 border-purple-400 text-white shadow"
+          : "p-2.5 rounded-xl border text-left transition flex flex-col items-center bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700";
+      });
+    }
+
+    function placeSymbolOnSlot(slotId) {
+      const slot = planSlots.find(s => s.id === slotId);
+      if (!slot) return;
+      slot.placed = selectedPlanSymbol;
+      renderFloorPlan();
+      checkFloorPlanCompletion();
+    }
+
+    function resetFloorPlan() {
+      planSlots.forEach(s => s.placed = null);
+      document.getElementById('floorPlanFeedback').textContent = "Plano reiniciado. Coloca cada símbolo unifilar en su hueco.";
+      document.getElementById('floorPlanFeedback').className = "mt-3 w-full text-center text-xs md:text-sm font-bold bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-300";
+      renderFloorPlan();
+    }
+
+    function checkFloorPlanCompletion() {
+      const placedCount = planSlots.filter(s => s.placed !== null).length;
+      document.getElementById('planScoreStatus').textContent = `${placedCount} / 6 ubicados`;
+
+      if (placedCount < 6) return;
+
+      const s1 = planSlots[0].placed === 'CAJA';
+      const s3 = planSlots[2].placed === 'LUZ';
+      const s6 = planSlots[5].placed === 'ENCH';
+      // Los 3 puntos de mando (slots 2, 4, 5) deben tener exactamente dos 'CONM' y un 'CRUCE'
+      const switches = [planSlots[1].placed, planSlots[3].placed, planSlots[4].placed];
+      const countConm = switches.filter(x => x === 'CONM').length;
+      const countCruce = switches.filter(x => x === 'CRUCE').length;
+
+      const fb = document.getElementById('floorPlanFeedback');
+      if (s1 && s3 && s6 && countConm === 2 && countCruce === 1) {
+        fb.innerHTML = "🏆 ¡PLANO UNIFILAR CERTIFICADO! Has colocado la caja de registro, la luminaria, el enchufe y los 2 conmutadores simples + 1 de cruce correctamente (+250 CR).";
+        fb.className = "mt-3 w-full text-center text-xs md:text-sm font-black bg-emerald-500/20 border border-emerald-500/50 rounded-xl p-2.5 text-emerald-300";
+        addScore(250, 'station4');
+      } else {
+        fb.innerHTML = "⚠️ Revisa los símbolos: recuerda que en [1] entra la Caja de Registro, en [3] va el Punto de Luz, en [6] el Enchufe y entre [2], [4] y [5] debe haber 2 Conmutadores Simples y 1 de Cruce.";
+        fb.className = "mt-3 w-full text-center text-xs md:text-sm font-bold bg-amber-500/20 border border-amber-500/50 rounded-xl p-2.5 text-amber-300";
+      }
+    }
+
+    function renderFloorPlan() {
+      const svg = document.getElementById('floorPlanSvg');
+      let html = `
+        <!-- Muros exteriores de la habitación -->
+        <rect x="60" y="40" width="580" height="340" fill="#0f172a" stroke="#94a3b8" stroke-width="10"/>
+        <!-- Hueco de puerta de entrada abajo a la izquierda -->
+        <line x1="95" y1="380" x2="155" y2="380" stroke="#0f172a" stroke-width="12"/>
+        <path d="M95 380 L95 320 A60 60 0 0 1 155 380" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="4 4"/>
+        <!-- Dibujo arquitectónico de la Cama de matrimonio y las 2 mesillas (como en Pág. 5 UT3) -->
+        <rect x="290" y="50" width="120" height="110" rx="4" fill="#1e293b" stroke="#475569" stroke-width="2.5"/>
+        <rect x="300" y="58" width="45" height="22" rx="3" fill="#334155"/>
+        <rect x="355" y="58" width="45" height="22" rx="3" fill="#334155"/>
+        <text x="350" y="125" text-anchor="middle" font-size="11" font-weight="bold" fill="#64748b">CAMA</text>
+
+        <!-- Canalizaciones unifilares (líneas verdes como en Pág. 5 UT3) con trazos oblicuos de nº conductores -->
+        <path d="M60 260 H105 V335 H175" fill="none" stroke="#22c55e" stroke-width="2.5"/>
+        <path d="M105 260 V80 H455" fill="none" stroke="#22c55e" stroke-width="2.5"/>
+        <path d="M105 215 H585" fill="none" stroke="#22c55e" stroke-width="2.5"/>
+        <!-- Trazos oblicuos de número de conductores (/// = 3 hilos, //// = 4 hilos) -->
+        <text x="155" y="72" font-size="12" font-weight="900" fill="#4ade80">/// (3 hilos)</text>
+        <text x="350" y="42" font-size="12" font-weight="900" fill="#4ade80">//// (4 hilos cruce)</text>
+        <text x="480" y="205" font-size="12" font-weight="900" fill="#4ade80">/// (F+N+PE)</text>
+      `;
+
+      planSlots.forEach(s => {
+        const palItem = planPaletteItems.find(p => p.code === s.placed);
+        html += `
+          <g class="cursor-pointer" onclick="placeSymbolOnSlot(${s.id})">
+            <rect x="${s.x - 24}" y="${s.y - 24}" width="48" height="48" rx="8" fill="${palItem ? '#ffffff' : '#1e293b'}" stroke="${palItem ? '#a855f7' : '#38bdf8'}" stroke-width="3" stroke-dasharray="${palItem ? '0' : '5 3'}"/>
+            ${palItem ? `<svg x="${s.x - 20}" y="${s.y - 20}" width="40" height="40" viewBox="0 0 40 40">${palItem.svg}</svg>` : `<text x="${s.x}" y="${s.y + 5}" text-anchor="middle" font-size="14" font-weight="900" fill="#38bdf8">${s.id}</text>`}
+            <rect x="${s.x - 58}" y="${s.y + 27}" width="116" height="16" rx="4" fill="#090d16" fill-opacity="0.85"/>
+            <text x="${s.x}" y="${s.y + 38}" text-anchor="middle" font-size="9" font-weight="bold" fill="#cbd5e1">${s.label}</text>
+          </g>
+        `;
+      });
+
+      svg.innerHTML = html;
+    }
+
+    // =========================================================================
+    // MODAL DE EXPORTACIÓN A CANVA
+    // =========================================================================
+    function openCanvaModal() {
+      const m = document.getElementById('canvaModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+    function closeCanvaModal() {
+      const m = document.getElementById('canvaModal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+    function copyCanvaPrompt() {
+      const txt = document.getElementById('canvaPromptTextarea').value;
+      navigator.clipboard.writeText(txt);
+      const btn = document.getElementById('copyPromptBtn');
+      btn.textContent = "✅ ¡Prompt Copiado!";
+      setTimeout(() => { btn.textContent = "📋 Copiar Prompt para IA de Canva"; }, 2000);
+    }
+    function copyFullHtmlCode() {
+      const code = document.documentElement.outerHTML;
+      navigator.clipboard.writeText(code);
+      const btn = document.getElementById('copyHtmlBtn');
+      btn.textContent = "✅ ¡Código HTML Copiado!";
+      setTimeout(() => { btn.textContent = "💻 Copiar Código HTML Completo"; }, 2000);
+    }
+
+    // Inicializar todas las estaciones al cargar
+    window.addEventListener('DOMContentLoaded', () => {
+      initStation1();
+      initStation2();
+      loadWiringLevel(0);
+      initStation4();
+    });
+  </script>
+</body>
+</html>
